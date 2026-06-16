@@ -3,11 +3,13 @@ import { auth } from '@/lib/auth/session'
 import { query, queryOne } from '@/lib/db/aurora'
 import { putSystemMessage } from '@/lib/db/dynamo'
 
-interface Params { params: { token: string } }
+interface Params { params: Promise<{ token: string }> }
 
 export async function POST(_req: NextRequest, { params }: Params) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { token } = await params
 
   const row = await queryOne<{
     id: string
@@ -16,7 +18,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
     created_at: Date
   }>(
     `SELECT id, status, receiver_business_id, created_at FROM sessions WHERE invitation_token = $1`,
-    [params.token]
+    [token]
   )
 
   if (!row) return NextResponse.json({ error: 'Invalid invitation' }, { status: 404 })

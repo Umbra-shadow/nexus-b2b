@@ -5,7 +5,7 @@ import { createVerificationToken } from '@/lib/auth/tokens'
 import { sendVerificationEmail } from '@/lib/email/ses'
 import { uploadFile, buildLogoKey, buildDocKey } from '@/lib/s3/upload'
 import { slugify } from '@/lib/utils'
-import { RegisterBusinessSchema, RegisterUserSchema } from '@/lib/validators'
+import { RegisterBusinessSchema, RegisterUserServerSchema } from '@/lib/validators'
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,9 +19,7 @@ export async function POST(req: NextRequest) {
     }
 
     const bizData = RegisterBusinessSchema.safeParse(JSON.parse(bizRaw as string))
-    const userData = RegisterUserSchema.omit({ confirmPassword: true }).safeParse(
-      JSON.parse(userRaw as string)
-    )
+    const userData = RegisterUserServerSchema.safeParse(JSON.parse(userRaw as string))
 
     if (!bizData.success) {
       return NextResponse.json({ error: 'Invalid business data', details: bizData.error.flatten() }, { status: 422 })
@@ -55,30 +53,30 @@ export async function POST(req: NextRequest) {
     let docS3Key: string | null = null
 
     const { businessId, userId, token } = await transaction(async (client) => {
-      const [business] = await client.query(
+      const bizRes = await client.query(
         `INSERT INTO businesses (name, slug, industry, country, city, website, description)
          VALUES ($1, $2, $3, $4, $5, $6, $7)
          RETURNING id`,
         [businessName, slug, industry, country, city ?? null, website ?? null, description ?? null]
       )
-      const businessId = business.rows[0].id
+      const businessId = bizRes.rows[0].id as string
 
-      const [user] = await client.query(
+      const userRes = await client.query(
         `INSERT INTO users (business_id, email, name, password_hash, role)
          VALUES ($1, $2, $3, $4, 'business_admin')
          RETURNING id`,
         [businessId, email, name, passwordHash]
       )
-      const userId = user.rows[0].id
+      const userId = userRes.rows[0].id as string
 
-      const [tokenRow] = await client.query(
+      const tokenRes = await client.query(
         `INSERT INTO verification_tokens (user_id, token, type, expires_at)
          VALUES ($1, $2, 'email_verify', NOW() + INTERVAL '48 hours')
          RETURNING token`,
         [userId, require('crypto').randomBytes(32).toString('hex')]
       )
 
-      return { businessId, userId, token: tokenRow.rows[0].token }
+      return { businessId, userId, token: tokenRes.rows[0].token as string }
     })
 
     // Upload files after DB commit
@@ -95,7 +93,12 @@ export async function POST(req: NextRequest) {
       await query(`UPDATE businesses SET verification_doc_s3_key = $1 WHERE id = $2`, [docS3Key, businessId])
     }
 
-    await sendVerificationEmail(email, name, token)
+    // Email send is best-effort — SES may be in sandbox; don't fail registration over it
+    try {
+      await sendVerificationEmail(email, name, token)
+    } catch (emailErr) {
+      console.warn('[register] email send failed (SES sandbox?):', emailErr)
+    }
 
     return NextResponse.json({ success: true, message: 'Registration complete. Check your email to verify your account.' })
   } catch (err) {

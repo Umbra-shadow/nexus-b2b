@@ -2,37 +2,61 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Search, MessageSquare, Users, FileText, Settings } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
-  { href: '/discovery', label: 'Discovery', icon: Search },
-  { href: '/sessions', label: 'Sessions', icon: MessageSquare },
-  { href: '/team', label: 'Team', icon: Users },
-  { href: '/receipts', label: 'Receipts', icon: FileText },
-  { href: '/settings/business', label: 'Settings', icon: Settings },
+  { href: '/dashboard', label: 'Home', glyph: '▦' },
+  { href: '/discovery', label: 'Discover', glyph: '◎' },
+  { href: '/sessions', label: 'Sessions', glyph: '◈' },
+  { href: '/receipts', label: 'Receipts', glyph: '▤' },
+  { href: '/settings/account', label: 'Settings', glyph: '◬' },
 ]
 
 export function BottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
-      <div className="flex items-center justify-around px-2 py-2">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const active = pathname.startsWith(href)
+    <nav
+      className="nx-sidebar"
+      style={{ display: 'none' }}
+    >
+      {/* Hidden on desktop — mobile only via override below */}
+      <style>{`
+        @media (max-width: 1023px) {
+          .nx-bottom-nav { display: flex !important; }
+        }
+      `}</style>
+      <div className="nx-bottom-nav" style={{
+        display: 'none',
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 50,
+        background: 'var(--nx-raised)',
+        borderTop: '1px solid var(--nx-border)',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        padding: '8px 8px',
+      }}>
+        {NAV_ITEMS.map(({ href, label, glyph }) => {
+          const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
           return (
             <Link
               key={href}
               href={href}
               aria-label={label}
-              className={cn(
-                'flex flex-col items-center gap-1 px-3 py-2 rounded-md min-w-[44px] transition-colors',
-                active ? 'text-brand-brown' : 'text-muted-foreground hover:text-foreground'
-              )}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+                padding: '6px 12px',
+                textDecoration: 'none',
+                minWidth: 44,
+              }}
             >
-              <Icon className="w-5 h-5" aria-hidden />
-              <span className="text-[10px] font-medium">{label}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: active ? '#c44b1b' : 'var(--nx-muted)' }}>{glyph}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: active ? '#c44b1b' : 'var(--nx-subtle)' }}>{label}</span>
             </Link>
           )
         })}

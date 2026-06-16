@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth/session'
+import { getToken } from 'next-auth/jwt'
 
 const PUBLIC_PATHS = [
   '/',
@@ -11,17 +11,19 @@ const PUBLIC_PATHS = [
   '/api/auth',
 ]
 
-const RATE_LIMIT_PATHS = ['/api/auth/register', '/api/auth/reset-password', '/auth/login']
+// Only rate-limit POST requests on auth mutation endpoints (not page navigations)
+const RATE_LIMIT_PATHS = ['/api/auth/register', '/api/auth/reset-password', '/api/auth/signin']
 
 const rateLimitMap = new Map<string, { count: number; reset: number }>()
 
-function rateLimit(ip: string, path: string): boolean {
+function rateLimit(ip: string, path: string, method: string): boolean {
+  if (method !== 'POST') return false
   if (!RATE_LIMIT_PATHS.some((p) => path.startsWith(p))) return false
 
   const key = `${ip}:${path}`
   const now = Date.now()
   const window = 60_000
-  const max = 10
+  const max = 15
 
   const entry = rateLimitMap.get(key)
   if (!entry || now > entry.reset) {
@@ -39,7 +41,7 @@ export async function middleware(req: NextRequest) {
 
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 
-  if (rateLimit(ip, pathname)) {
+  if (rateLimit(ip, pathname, req.method)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
@@ -49,8 +51,13 @@ export async function middleware(req: NextRequest) {
 
   if (isPublic) return NextResponse.next()
 
-  const session = await auth()
-  if (!session?.user) {
+  // Verify JWT without touching the database — safe for edge runtime
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET! })
+  if (!token) {
+    // API routes get 401; page routes get redirected to login
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     const url = req.nextUrl.clone()
     url.pathname = '/auth/login'
     url.searchParams.set('callbackUrl', pathname)

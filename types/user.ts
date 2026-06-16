@@ -25,9 +25,9 @@ declare module 'next-auth' {
   }
 }
 
-declare module 'next-auth/jwt' {
+declare module '@auth/core/jwt' {
   interface JWT {
-    role: string
-    businessId: string
+    role?: string
+    businessId?: string
   }
 }

@@ -5,11 +5,12 @@ import { validateToken, markTokenUsed } from '@/lib/auth/tokens'
 import { query } from '@/lib/db/aurora'
 
 interface Props {
-  params: { token: string }
+  params: Promise<{ token: string }>
 }
 
 export default async function VerifyEmailPage({ params }: Props) {
-  const result = await validateToken(params.token, 'email_verify')
+  const { token } = await params
+  const result = await validateToken(token, 'email_verify')
 
   if (!result) {
     return (

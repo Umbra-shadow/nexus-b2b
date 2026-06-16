@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/session'
 import { query } from '@/lib/db/aurora'
-import { parseSearchQuery } from '@/lib/ai/gemini'
+import { parseSearchQuery } from '@/lib/ai/v0'
 import { getPresignedUrl } from '@/lib/s3/upload'
 
 const PAGE_SIZE = 20
@@ -23,10 +23,14 @@ export async function GET(req: NextRequest) {
   let parsedIndustry = industry
 
   if (rawQ && rawQ.length > 3 && !country && !industry) {
-    const parsed = await parseSearchQuery(rawQ)
-    if (parsed.country && !country) parsedCountry = parsed.country
-    if (parsed.industry && !industry) parsedIndustry = parsed.industry
-    keywords = parsed.keywords || rawQ
+    try {
+      const parsed = await parseSearchQuery(rawQ)
+      if (parsed.country && !country) parsedCountry = parsed.country
+      if (parsed.industry && !industry) parsedIndustry = parsed.industry
+      keywords = parsed.keywords || rawQ
+    } catch {
+      // AI unavailable — fall back to plain keyword search
+    }
   }
 
   const conditions: string[] = [

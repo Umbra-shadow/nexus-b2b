@@ -1,140 +1,203 @@
 import { auth } from '@/lib/auth/session'
 import { query, queryOne } from '@/lib/db/aurora'
 import Link from 'next/link'
-import { MessageSquare, Search, FileText, Users, ArrowRight } from 'lucide-react'
-import { StatusPill } from '@/components/shared/StatusPill'
-import { Button } from '@/components/ui/button'
 import { formatDateTime } from '@/lib/utils'
 
 export const metadata = { title: 'Dashboard' }
+
+const STATUS_COLOR: Record<string, string> = {
+  active: '#5a9a7a',
+  pending: '#c8a240',
+  closed: 'var(--nx-muted)',
+}
+const STATUS_BORDER: Record<string, string> = {
+  active: '#274a3a',
+  pending: '#4a4020',
+  closed: 'var(--nx-strong)',
+}
+
+function getInitials(name: string) {
+  return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+}
+
+function getDayLabel() {
+  const now = new Date()
+  const weekday = now.toLocaleDateString('en-US', { weekday: 'long' })
+  const day = now.getDate()
+  const month = now.toLocaleDateString('en-US', { month: 'long' })
+  return `/ ${weekday} · ${day} ${month}`
+}
+
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h < 12) return 'GOOD MORNING'
+  if (h < 17) return 'GOOD AFTERNOON'
+  return 'GOOD EVENING'
+}
 
 export default async function DashboardPage() {
   const session = await auth()
   const user = session!.user
 
-  const [activeSessions, pendingInvites, recentReceipts, business] = await Promise.all([
+  const [activeSessions, pendingRows, receiptRows, recentSessions, business, networkCount] = await Promise.all([
     query<{ count: string }>(
-      `SELECT COUNT(*) as count FROM sessions WHERE (initiator_agent_id = $1 OR receiver_agent_id = $1) AND status = 'active'`,
-      [user.id]
+      `SELECT COUNT(*) as count FROM sessions WHERE (initiator_business_id = $1 OR receiver_business_id = $1) AND status = 'active'`,
+      [user.businessId]
     ),
     query<{ count: string }>(
-      `SELECT COUNT(*) as count FROM sessions WHERE receiver_business_id = $1 AND status = 'pending'`,
+      `SELECT COUNT(*) as count FROM sessions WHERE (initiator_business_id = $1 OR receiver_business_id = $1) AND status = 'pending'`,
       [user.businessId]
     ),
-    query<{ id: string; total: number; currency: string; status: string; created_at: string; issuer_name: string; receiver_name: string }>(
-      `SELECT r.id, r.total, r.currency, r.status, r.created_at,
-              ib.name as issuer_name, rb.name as receiver_name
-       FROM receipts r
-       JOIN businesses ib ON ib.id = r.issuer_business_id
-       JOIN businesses rb ON rb.id = r.receiver_business_id
-       WHERE r.issuer_business_id = $1 OR r.receiver_business_id = $1
-       ORDER BY r.created_at DESC LIMIT 5`,
+    query<{ count: string; pending_ack: string }>(
+      `SELECT COUNT(*) as count,
+              COUNT(CASE WHEN receiver_business_id = $1 AND status = 'sent' THEN 1 END) as pending_ack
+       FROM receipts WHERE issuer_business_id = $1 OR receiver_business_id = $1`,
       [user.businessId]
     ),
-    queryOne<{ name: string; verification_status: string }>(
-      `SELECT name, verification_status FROM businesses WHERE id = $1`,
+    query<{ id: string; status: string; created_at: string; other_business_name: string; other_business_industry: string }>(
+      `SELECT s.id, s.status, s.created_at,
+              CASE WHEN s.initiator_business_id = $1 THEN rb.name ELSE ib.name END as other_business_name,
+              CASE WHEN s.initiator_business_id = $1 THEN rb.industry ELSE ib.industry END as other_business_industry
+       FROM sessions s
+       JOIN businesses ib ON ib.id = s.initiator_business_id
+       JOIN businesses rb ON rb.id = s.receiver_business_id
+       WHERE s.initiator_business_id = $1 OR s.receiver_business_id = $1
+       ORDER BY s.created_at DESC LIMIT 5`,
       [user.businessId]
+    ),
+    queryOne<{ name: string; city: string; verification_status: string; created_at: string | null }>(
+      `SELECT name, city, verification_status, created_at FROM businesses WHERE id = $1`,
+      [user.businessId]
+    ),
+    query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM businesses WHERE verification_status = 'verified'`,
+      []
     ),
   ])
 
   const activeCount = parseInt(activeSessions[0]?.count ?? '0')
-  const pendingCount = parseInt(pendingInvites[0]?.count ?? '0')
+  const pendingCount = parseInt(pendingRows[0]?.count ?? '0')
+  const receiptCount = parseInt(receiptRows[0]?.count ?? '0')
+  const pendingAck = parseInt(receiptRows[0]?.pending_ack ?? '0')
+  const netCount = parseInt(networkCount[0]?.count ?? '0')
+  const firstName = user.name.split(' ')[0].toUpperCase()
+
+  const verifiedDate = business?.created_at
+    ? new Date(business.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null
+
+  const dashStats = [
+    { label: 'Active sessions', value: String(activeCount), color: 'var(--nx-fg-strong)', note: 'in your deal rooms' },
+    { label: 'Pending requests', value: String(pendingCount), color: '#c44b1b', note: 'awaiting acceptance' },
+    { label: 'Receipts', value: String(receiptCount), color: 'var(--nx-fg-strong)', note: pendingAck > 0 ? `${pendingAck} to acknowledge` : 'all settled' },
+    { label: 'Network reach', value: `${netCount}`, color: 'var(--nx-fg-strong)', note: 'verified firms on network' },
+  ]
 
   return (
-    <div className="container-app py-8 space-y-8">
-      {/* Welcome */}
-      <div>
-        <h1 className="text-heading text-foreground">
-          Welcome back, {user.name.split(' ')[0]}
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          {business?.name} · {business?.verification_status === 'verified' ? '✅ Verified' : '⏳ Verification pending'}
-        </p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid sm:grid-cols-3 gap-4">
-        <div className="card-base flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
-            <MessageSquare className="w-5 h-5 text-green-700" />
+    <div style={{ padding: '36px 40px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 32 }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 10 }}>
+            {getDayLabel()}
           </div>
-          <div>
-            <p className="text-2xl font-bold text-foreground">{activeCount}</p>
-            <p className="text-sm text-muted-foreground">Active sessions</p>
-          </div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 52, lineHeight: 0.9, color: 'var(--nx-fg-strong)' }}>
+            {getGreeting()}, {firstName}.
+          </h1>
         </div>
-
-        <div className="card-base flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
-            <Users className="w-5 h-5 text-orange-700" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-foreground">{pendingCount}</p>
-            <p className="text-sm text-muted-foreground">Pending invitations</p>
-          </div>
-        </div>
-
-        <Link href="/discovery" className="card-base flex items-center gap-4 hover:shadow-md transition-shadow group">
-          <div className="w-10 h-10 rounded-lg bg-brand-brown/10 flex items-center justify-center shrink-0">
-            <Search className="w-5 h-5 text-brand-brown" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-semibold text-foreground">Find businesses</p>
-            <p className="text-sm text-muted-foreground">Search global partners</p>
-          </div>
-          <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-brand-brown transition-colors shrink-0" />
+        <Link
+          href="/discovery"
+          style={{ background: '#c44b1b', padding: '14px 24px', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#ffffff', textDecoration: 'none', whiteSpace: 'nowrap' }}
+        >
+          ＋ New session
         </Link>
       </div>
 
-      {/* Quick search */}
-      <div className="card-base">
-        <h2 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Search className="w-4 h-4" /> Quick discovery
-        </h2>
-        <Link href="/discovery">
-          <div className="input-base flex items-center gap-2 text-muted-foreground cursor-pointer hover:bg-secondary transition-colors">
-            <Search className="w-4 h-4 shrink-0" />
-            I'm looking for a company that deals with…
+      {/* Stat grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', border: '1px solid var(--nx-border)', marginBottom: 32 }}>
+        {dashStats.map((s, i) => (
+          <div key={s.label} style={{ padding: '26px 24px', borderRight: i < 3 ? '1px solid var(--nx-border)' : undefined }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 14 }}>{s.label}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 60, lineHeight: 0.85, color: s.color }}>{s.value}</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--nx-subtle)', marginTop: 8 }}>{s.note}</div>
           </div>
-        </Link>
+        ))}
       </div>
 
-      {/* Recent receipts */}
-      {recentReceipts.length > 0 && (
-        <div className="card-base">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-foreground flex items-center gap-2">
-              <FileText className="w-4 h-4" /> Recent receipts
-            </h2>
-            <Link href="/receipts" className="text-sm text-brand-brown hover:underline">View all</Link>
+      {/* Bottom 2-col */}
+      <div className="nx-dash-bottom">
+        {/* Recent activity */}
+        <div style={{ border: '1px solid var(--nx-border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid var(--nx-border)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nx-fg)' }}>Recent activity</div>
+            <Link href="/sessions" style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: '#c44b1b', textDecoration: 'none' }}>All sessions →</Link>
           </div>
-          <div className="space-y-3">
-            {recentReceipts.map((r) => (
-              <Link
-                key={r.id}
-                href={`/receipts/${r.id}`}
-                className="flex items-center justify-between py-2 border-b border-border last:border-0 hover:text-brand-brown transition-colors"
-              >
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {r.issuer_name} → {r.receiver_name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{formatDateTime(r.created_at)}</p>
+          {recentSessions.length === 0 ? (
+            <div style={{ padding: '24px', fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-muted)', fontStyle: 'italic' }}>No sessions yet.</div>
+          ) : (
+            recentSessions.map((s) => (
+              <Link key={s.id} href={`/sessions/${s.id}`} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', borderBottom: '1px solid var(--nx-line)', textDecoration: 'none' }}>
+                <div style={{ width: 34, height: 34, border: '1px solid var(--nx-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 15, color: 'var(--nx-fg-strong)', flexShrink: 0 }}>
+                  {getInitials(s.other_business_name)}
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-mono font-semibold">
-                    {r.currency} {Number(r.total).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                  </p>
-                  <span className={`text-xs font-medium ${
-                    r.status === 'acknowledged' ? 'text-green-600' :
-                    r.status === 'sent' ? 'text-brand-brown' : 'text-muted-foreground'
-                  }`}>{r.status}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg-strong)', lineHeight: 1.3 }}>{s.other_business_name}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.06em', color: 'var(--nx-muted)', textTransform: 'uppercase', marginTop: 3 }}>{s.other_business_industry}</div>
+                </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: STATUS_COLOR[s.status] ?? 'var(--nx-muted)', border: `1px solid ${STATUS_BORDER[s.status] ?? 'var(--nx-strong)'}`, padding: '3px 7px', flexShrink: 0 }}>
+                  {s.status}
+                </span>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--nx-subtle)', width: 40, textAlign: 'right', flexShrink: 0 }}>
+                  {formatDateTime(s.created_at)}
                 </div>
               </Link>
-            ))}
+            ))
+          )}
+        </div>
+
+        {/* Right column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* Find a partner */}
+          <div style={{ border: '1px solid var(--nx-border)', padding: 24, backgroundImage: 'radial-gradient(ellipse at 100% 0%,rgba(196,75,27,0.07),transparent 60%)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 14 }}>Find a partner</div>
+            <p style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-muted)', lineHeight: 1.5, marginBottom: 18 }}>
+              Describe who you&apos;re looking for. Our AI matches against verified profiles.
+            </p>
+            <Link href="/discovery" style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--nx-strong)', background: 'var(--nx-bg)', padding: '11px 14px', marginBottom: 14, textDecoration: 'none' }}>
+              <span style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-subtle)' }}>e.g. textile manufacturer in Portugal</span>
+            </Link>
+            <Link href="/discovery" style={{ display: 'block', textAlign: 'center', border: '1px solid #c44b1b', color: '#c44b1b', padding: 11, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', textDecoration: 'none' }}>
+              Search network →
+            </Link>
+          </div>
+
+          {/* Verification status */}
+          <div style={{ border: '1px solid var(--nx-border)', padding: 24 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nx-fg)', marginBottom: 16 }}>Verification status</div>
+            {business?.verification_status === 'verified' ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                  <span style={{ width: 8, height: 8, background: '#5a9a7a', borderRadius: 9999, display: 'inline-block' }} />
+                  <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--nx-fg-strong)' }}>Verified business</span>
+                </div>
+                <p style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-subtle)', lineHeight: 1.5 }}>
+                  Your profile is public and discoverable.{verifiedDate ? ` Verified ${verifiedDate}.` : ''}
+                </p>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                  <span style={{ width: 8, height: 8, background: '#c8a240', borderRadius: 9999, display: 'inline-block' }} />
+                  <span style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--nx-fg-strong)' }}>Pending verification</span>
+                </div>
+                <p style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-subtle)', lineHeight: 1.5 }}>
+                  Your application is under review. You&apos;ll appear in discovery once verified.
+                </p>
+              </>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }

@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/session'
-import { query } from '@/lib/db/aurora'
+import { query, queryOne } from '@/lib/db/aurora'
+
+export async function DELETE(_req: NextRequest) {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (session.user.email === 'admin@meridian.io') {
+    return NextResponse.json(
+      { error: 'This account is protected for the live demo and cannot be deleted.' },
+      { status: 403 }
+    )
+  }
+  await query(`DELETE FROM users WHERE id = $1`, [session.user.id])
+  return NextResponse.json({ success: true })
+}
+
+export async function GET(_req: NextRequest) {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const user = await queryOne(
+    `SELECT id, email, name, role, is_active, email_verified, created_at FROM users WHERE id = $1`,
+    [session.user.id]
+  )
+  return NextResponse.json({ user })
+}
 
 export async function PATCH(req: NextRequest) {
   const session = await auth()

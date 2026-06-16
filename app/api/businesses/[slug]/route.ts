@@ -3,11 +3,13 @@ import { auth } from '@/lib/auth/session'
 import { queryOne } from '@/lib/db/aurora'
 import { getPresignedUrl } from '@/lib/s3/upload'
 
-interface Params { params: { slug: string } }
+interface Params { params: Promise<{ slug: string }> }
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { slug } = await params
 
   const business = await queryOne<{
     id: string
@@ -24,7 +26,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     `SELECT id, name, slug, industry, country, city, description, website, logo_s3_key, verification_status
      FROM businesses
      WHERE slug = $1 AND verification_status = 'verified'`,
-    [params.slug]
+    [slug]
   )
 
   if (!business) return NextResponse.json({ error: 'Not found' }, { status: 404 })

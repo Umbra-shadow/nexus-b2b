@@ -3,11 +3,13 @@ import { auth } from '@/lib/auth/session'
 import { queryOne } from '@/lib/db/aurora'
 import { getPresignedUrl } from '@/lib/s3/upload'
 
-interface Params { params: { id: string } }
+interface Params { params: Promise<{ id: string }> }
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
 
   const row = await queryOne<Record<string, unknown>>(
     `SELECT
@@ -24,7 +26,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
      JOIN users ia ON ia.id = s.initiator_agent_id
      LEFT JOIN users ra ON ra.id = s.receiver_agent_id
      WHERE s.id = $1`,
-    [params.id]
+    [id]
   )
 
   if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 })

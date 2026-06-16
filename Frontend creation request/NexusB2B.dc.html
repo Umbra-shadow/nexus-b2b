@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0a0a;--bg-blur:rgba(10,10,10,0.92);--raised:#111111;--panel:#0d0d0d;
+    --line:#1a1a1a;--border:#222222;--strong:#333333;--faint-ink:#444444;
+    --subtle:#555555;--subtle2:#666666;--soft:#777777;--muted:#888888;--soft2:#999999;
+    --fg:#b8b8b8;--fg-bright:#e8e8e8;--fg-strong:#ffffff;--accent:#c44b1b;
+  }
+  :root[data-theme="light"]{
+    --bg:#f3f0e8;--bg-blur:rgba(243,240,232,0.9);--raised:#ffffff;--panel:#fbf9f4;
+    --line:#e8e3d8;--border:#ddd6c9;--strong:#cabfac;--faint-ink:#b4a995;
+    --subtle:#9c9384;--subtle2:#8b8172;--soft:#7d7365;--muted:#6c6456;--soft2:#5d554a;
+    --fg:#433e36;--fg-bright:#23201b;--fg-strong:#13110d;--accent:#c44b1b;
+  }
+  html,body{background:var(--bg);color:var(--fg);font-family:'Crimson Pro',Georgia,serif;-webkit-font-smoothing:antialiased;transition:background-color 0.35s ease,color 0.35s ease}
+  ::selection{background:#c44b1b;color:#0a0a0a}
+  input,textarea,button{font-family:inherit;color:inherit;outline:none;border:none;background:none}
+  input::placeholder,textarea::placeholder{color:var(--subtle)}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:var(--border);border:2px solid var(--bg)}
+  ::-webkit-scrollbar-thumb:hover{background:var(--strong)}
+  @keyframes nx-blink{0%,100%{opacity:1}50%{opacity:0.25}}
+  @keyframes nx-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes nx-dot{0%,100%{opacity:0.3}50%{opacity:1}}
+</style>
+</helmet>
+<div style="min-height:100vh;background:var(--bg)">
+
+<!-- ============ LANDING ============ -->
+<sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:100vh;background:var(--bg);background-image:radial-gradient(ellipse at 75% 0%,rgba(196,75,27,0.08) 0%,transparent 55%)">
+  <div style="max-width:1280px;margin:0 auto;padding:0 40px">
+    <!-- nav -->
+    <div style="display:flex;align-items:center;justify-content:space-between;height:80px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:26px;height:26px;position:relative;flex-shrink:0">
+          <div style="position:absolute;width:8px;height:8px;background:#c44b1b;top:0;left:0"></div>
+          <div style="position:absolute;width:8px;height:8px;border:1px solid #c44b1b;top:0;right:0"></div>
+          <div style="position:absolute;width:8px;height:8px;border:1px solid #c44b1b;bottom:0;left:0"></div>
+          <div style="position:absolute;width:8px;height:8px;background:#c44b1b;bottom:0;right:0"></div>
+          <div style="position:absolute;width:1px;height:18px;background:var(--faint-ink);left:50%;top:4px"></div>
+          <div style="position:absolute;height:1px;width:18px;background:var(--faint-ink);top:50%;left:4px"></div>
+        </div>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:0.18em;color:var(--fg-strong)">NEXUS<span style="color:#c44b1b">B2B</span></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:32px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);cursor:pointer">Platform</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);cursor:pointer">Verification</span>
+        <span onClick="{{ toggleTheme }}" title="Toggle light / dark" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);border:1px solid var(--border);padding:6px 10px;cursor:pointer;line-height:1">{{ themeGlyph }}</span>
+        <span onClick="{{ goLogin }}" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--fg);cursor:pointer">Log in</span>
+        <span onClick="{{ goRegister }}" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#0a0a0a;background:#c44b1b;padding:10px 18px;cursor:pointer">Register →</span>
+      </div>
+    </div>
+    <!-- hero -->
+    <div style="display:grid;grid-template-columns:1.15fr 0.85fr;gap:0;border-bottom:1px solid var(--border)">
+      <div style="padding:80px 48px 80px 0;border-right:1px solid var(--border)">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:#c44b1b;margin-bottom:28px;display:flex;align-items:center;gap:10px">
+          <span style="width:6px;height:6px;background:#c44b1b;border-radius:9999px;display:inline-block;animation:nx-dot 1.6s infinite"></span>
+          Verified B2B Network — Live
+        </div>
+        <h1 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(64px,8.5vw,128px);line-height:0.86;letter-spacing:0.01em;color:var(--fg-strong);margin-bottom:32px">
+          THE DEAL ROOM<br>FOR <span style="color:#c44b1b">VERIFIED</span><br>BUSINESS.
+        </h1>
+        <p style="font-family:'Crimson Pro',serif;font-size:19px;line-height:1.7;color:var(--muted);max-width:480px;margin-bottom:40px">
+          Cold email is broken. NexusB2B is a closed network where every company is identity-verified before they appear. Discover partners in plain language, open a structured deal session, and exchange receipts — all in one room.
+        </p>
+        <div style="display:flex;gap:16px;align-items:center">
+          <span onClick="{{ goRegister }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#0a0a0a;background:#c44b1b;padding:16px 28px;cursor:pointer">Verify your business</span>
+          <span onClick="{{ goDemo }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--fg);border:1px solid var(--strong);padding:16px 28px;cursor:pointer">Enter demo →</span>
+        </div>
+      </div>
+      <div style="padding:48px 0 48px 48px;display:flex;flex-direction:column;justify-content:space-between">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border)">
+          <div style="padding:24px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:0.9;color:var(--fg-strong)">2,400+</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);margin-top:6px">Verified firms</div>
+          </div>
+          <div style="padding:24px;border-bottom:1px solid var(--border)">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:0.9;color:var(--fg-strong)">38</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);margin-top:6px">Countries</div>
+          </div>
+          <div style="padding:24px;border-right:1px solid var(--border)">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:0.9;color:#c44b1b">100%</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);margin-top:6px">Identity-checked</div>
+          </div>
+          <div style="padding:24px">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:0.9;color:var(--fg-strong)">€140M</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);margin-top:6px">In session deals</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- live preview strip -->
+    <div style="padding:48px 0 32px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:#c44b1b">/ Live on the network</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.1em;color:var(--subtle)">Public profiles · updated continuously</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--border);border-bottom:none">
+        <sc-for list="{{ landingPreview }}" as="b" hint-placeholder-count="4">
+        <div style="padding:22px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="width:36px;height:36px;border:1px solid var(--strong);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--fg-strong);letter-spacing:0.04em">{{ b.initials }}</div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:#c44b1b;border:1px solid #7a2a0c;padding:3px 6px">✓ Verified</span>
+          </div>
+          <div>
+            <div style="font-family:'Crimson Pro',serif;font-size:17px;color:var(--fg-strong);line-height:1.2;margin-bottom:4px">{{ b.name }}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.06em;color:var(--muted);text-transform:uppercase">{{ b.industry }} · {{ b.city }}</div>
+          </div>
+        </div>
+        </sc-for>
+      </div>
+    </div>
+    <!-- demo credentials -->
+    <div style="padding:24px 0 80px">
+      <div style="border:1px solid #7a2a0c;background:linear-gradient(180deg,rgba(196,75,27,0.05),transparent);padding:28px 32px;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:center">
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#c44b1b;margin-bottom:10px">For the hackathon judge</div>
+          <div style="font-family:'Crimson Pro',serif;font-size:18px;color:var(--fg);line-height:1.5;max-width:520px">Skip registration. Sign in as <strong style="color:var(--fg-strong)">Meridian Logistics</strong> to explore discovery, live sessions, AI-mediated intros and receipts with seeded data.</div>
+        </div>
+        <div style="display:flex;gap:0;border:1px solid var(--border)">
+          <div style="padding:16px 22px;border-right:1px solid var(--border)">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Email</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--fg-strong)">admin@meridian.io</div>
+          </div>
+          <div style="padding:16px 22px;border-right:1px solid var(--border)">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Password</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--fg-strong)">demo1234</div>
+          </div>
+          <div onClick="{{ goDemo }}" style="padding:16px 22px;background:#c44b1b;display:flex;align-items:center;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#0a0a0a;cursor:pointer">Enter →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- footer -->
+  <div style="border-top:1px solid var(--border);margin-top:40px">
+    <div style="max-width:1280px;margin:0 auto;padding:56px 40px 40px">
+      <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:32px;padding-bottom:48px;border-bottom:1px solid var(--line)">
+        <div>
+          <div style="display:flex;align-items:center;gap:11px;margin-bottom:18px">
+            <div style="width:22px;height:22px;position:relative;flex-shrink:0">
+              <div style="position:absolute;width:7px;height:7px;background:#c44b1b;top:0;left:0"></div>
+              <div style="position:absolute;width:7px;height:7px;border:1px solid #c44b1b;top:0;right:0"></div>
+              <div style="position:absolute;width:7px;height:7px;border:1px solid #c44b1b;bottom:0;left:0"></div>
+              <div style="position:absolute;width:7px;height:7px;background:#c44b1b;bottom:0;right:0"></div>
+            </div>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.18em;color:var(--fg-strong)">NEXUS<span style="color:#c44b1b">B2B</span></span>
+          </div>
+          <p style="font-family:'Crimson Pro',serif;font-size:16px;line-height:1.6;color:var(--muted);max-width:300px">The verified deal room for business. Discover identity-checked partners, open structured sessions, exchange receipts.</p>
+        </div>
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--subtle);margin-bottom:18px">Platform</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <span style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg);cursor:pointer">Discovery</span>
+            <span style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg);cursor:pointer">Sessions</span>
+            <span style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg);cursor:pointer">Receipts</span>
+            <span style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg);cursor:pointer">Verification</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--subtle);margin-bottom:18px">Company</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <span style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg);cursor:pointer">About</span>
+            <span style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg);cursor:pointer">Careers</span>
+            <span style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg);cursor:pointer">Contact</span>
+            <span style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg);cursor:pointer">Press</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--subtle);margin-bottom:18px">Trust</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <span style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg);cursor:pointer">Security</span>
+            <span style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg);cursor:pointer">Privacy</span>
+            <span style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg);cursor:pointer">Terms</span>
+            <span style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg);cursor:pointer">Status</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding-top:24px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em;color:var(--subtle)">© 2026 NexusB2B</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#c8a240;border:1px solid #4a4020;padding:4px 9px">Demo build — fictional businesses</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:20px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.06em;color:var(--muted)">🔒 AES-256-GCM</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.06em;color:var(--muted)">Identity-verified network</span>
+          <span onClick="{{ toggleTheme }}" title="Toggle light / dark" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);border:1px solid var(--border);padding:6px 10px;cursor:pointer;line-height:1">{{ themeGlyph }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ LOGIN ============ -->
+<sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:100vh;display:grid;grid-template-columns:1fr 1fr">
+  <div style="background:var(--bg);border-right:1px solid var(--border);padding:48px;display:flex;flex-direction:column;justify-content:space-between;background-image:radial-gradient(ellipse at 20% 30%,rgba(196,75,27,0.08),transparent 60%)">
+    <div onClick="{{ goLanding }}" style="display:flex;align-items:center;gap:12px;cursor:pointer">
+      <div style="width:22px;height:22px;position:relative">
+        <div style="position:absolute;width:7px;height:7px;background:#c44b1b;top:0;left:0"></div>
+        <div style="position:absolute;width:7px;height:7px;border:1px solid #c44b1b;top:0;right:0"></div>
+        <div style="position:absolute;width:7px;height:7px;border:1px solid #c44b1b;bottom:0;left:0"></div>
+        <div style="position:absolute;width:7px;height:7px;background:#c44b1b;bottom:0;right:0"></div>
+      </div>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.18em;color:var(--fg-strong)">NEXUS<span style="color:#c44b1b">B2B</span></span>
+    </div>
+    <div>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:72px;line-height:0.88;color:var(--fg-strong);margin-bottom:20px">WELCOME<br>BACK.</h2>
+      <p style="font-family:'Crimson Pro',serif;font-size:18px;color:var(--muted);max-width:380px;line-height:1.6">Every business in this room has been verified. Sign in to pick up your sessions.</p>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.1em;color:var(--faint-ink)">AES-256-GCM · JWT session · SOC2 in progress</div>
+  </div>
+  <div style="background:var(--bg);display:flex;align-items:center;justify-content:center;padding:48px">
+    <div style="width:100%;max-width:380px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:#c44b1b;margin-bottom:32px">/ Sign in</div>
+      <div style="margin-bottom:20px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Email</div>
+        <input value="admin@meridian.io" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--fg-strong)" />
+      </div>
+      <div style="margin-bottom:28px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)">Password</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.06em;color:var(--subtle);cursor:pointer">Forgot?</div>
+        </div>
+        <input type="password" value="demo1234" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--fg-strong)" />
+      </div>
+      <div onClick="{{ goDemo }}" style="width:100%;background:#c44b1b;padding:16px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#0a0a0a;cursor:pointer">Sign in →</div>
+      <div style="text-align:center;margin-top:24px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--muted)">No account? <span onClick="{{ goRegister }}" style="color:#c44b1b;cursor:pointer">Verify your business</span></div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ REGISTER ============ -->
+<sc-if value="{{ isRegister }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:100vh;background:var(--bg)">
+  <div style="max-width:880px;margin:0 auto;padding:48px 40px 80px">
+    <div onClick="{{ goLanding }}" style="display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:48px">
+      <div style="width:22px;height:22px;position:relative">
+        <div style="position:absolute;width:7px;height:7px;background:#c44b1b;top:0;left:0"></div>
+        <div style="position:absolute;width:7px;height:7px;border:1px solid #c44b1b;top:0;right:0"></div>
+        <div style="position:absolute;width:7px;height:7px;border:1px solid #c44b1b;bottom:0;left:0"></div>
+        <div style="position:absolute;width:7px;height:7px;background:#c44b1b;bottom:0;right:0"></div>
+      </div>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:0.18em;color:var(--fg-strong)">NEXUS<span style="color:#c44b1b">B2B</span></span>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:#c44b1b;margin-bottom:16px">/ Register · Step 1 of 2</div>
+    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:56px;line-height:0.9;color:var(--fg-strong);margin-bottom:12px">VERIFY YOUR BUSINESS</h2>
+    <p style="font-family:'Crimson Pro',serif;font-size:18px;color:var(--muted);margin-bottom:48px;max-width:560px">Tell us about your company. Our team reviews every application before you appear in discovery — usually within one business day.</p>
+
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--fg);border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:24px">Company</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Company name</div><input placeholder="Acme Trading Co." style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong)" /></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Industry</div><input placeholder="Manufacturing" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong)" /></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">City</div><input placeholder="Rotterdam" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong)" /></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Website</div><input placeholder="acme.com" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong)" /></div>
+    </div>
+    <div style="margin-bottom:36px"><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Description</div><textarea placeholder="What does your business do? Who do you want to reach?" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong);min-height:90px;resize:vertical"></textarea></div>
+
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--fg);border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:24px">Admin account</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:40px">
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Your name</div><input placeholder="Jane Doe" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong)" /></div>
+      <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Work email</div><input placeholder="jane@acme.com" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong)" /></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:20px">
+      <div onClick="{{ goDemo }}" style="background:#c44b1b;padding:16px 32px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:#0a0a0a;cursor:pointer">Submit for verification →</div>
+      <div onClick="{{ goLogin }}" style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--muted);cursor:pointer">Already verified? <span style="color:#c44b1b">Sign in</span></div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ APP SHELL ============ -->
+<sc-if value="{{ inApp }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;min-height:100vh;background:var(--bg)">
+  <!-- SIDEBAR -->
+  <div style="width:248px;flex-shrink:0;background:var(--bg);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh">
+    <div onClick="{{ goLanding }}" style="display:flex;align-items:center;gap:11px;height:64px;padding:0 24px;border-bottom:1px solid var(--border);cursor:pointer">
+      <div style="width:22px;height:22px;position:relative;flex-shrink:0">
+        <div style="position:absolute;width:7px;height:7px;background:#c44b1b;top:0;left:0"></div>
+        <div style="position:absolute;width:7px;height:7px;border:1px solid #c44b1b;top:0;right:0"></div>
+        <div style="position:absolute;width:7px;height:7px;border:1px solid #c44b1b;bottom:0;left:0"></div>
+        <div style="position:absolute;width:7px;height:7px;background:#c44b1b;bottom:0;right:0"></div>
+      </div>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:0.18em;color:var(--fg-strong)">NEXUS<span style="color:#c44b1b">B2B</span></span>
+    </div>
+    <div style="flex:1;padding:20px 0;overflow-y:auto">
+      <sc-for list="{{ navItems }}" as="it" hint-placeholder-count="8">
+      <div onClick="{{ it.go }}" style="display:flex;align-items:center;gap:12px;padding:11px 24px;cursor:pointer;border-left:2px solid {{ it.edge }};background:{{ it.bg }}">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;width:16px;color:{{ it.ink }}">{{ it.glyph }}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:{{ it.ink }};flex:1">{{ it.label }}</span>
+        <sc-if value="{{ it.badge }}" hint-placeholder-val="{{ false }}"><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#c44b1b;background:rgba(196,75,27,0.12);padding:2px 6px">{{ it.badge }}</span></sc-if>
+      </div>
+      </sc-for>
+    </div>
+    <div style="border-top:1px solid var(--border);padding:14px 24px 16px">
+      <div onClick="{{ toggleTheme }}" style="display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);padding:9px 12px;margin-bottom:14px;cursor:pointer">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)">Appearance</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent)">{{ themeGlyph }} {{ themeLabel }}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border:1px solid var(--strong);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--fg-strong);flex-shrink:0">EV</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'Crimson Pro',serif;font-size:14px;color:var(--fg-strong);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Elena Voss</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:#c44b1b">Business Admin</div>
+        </div>
+        <span onClick="{{ goLanding }}" title="Sign out" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--subtle);cursor:pointer">⏻</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <!-- topbar -->
+    <div style="height:64px;flex-shrink:0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:20px;padding:0 32px;position:sticky;top:0;background:var(--bg-blur);backdrop-filter:blur(10px);z-index:5">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--fg)">{{ crumb }}</div>
+      <div style="flex:1;max-width:420px;margin-left:auto;display:flex;align-items:center;gap:10px;border:1px solid var(--border);background:var(--raised);padding:9px 14px">
+        <span style="color:var(--subtle);font-size:12px">⌕</span>
+        <input value="{{ topSearch }}" onInput="{{ onTopSearch }}" placeholder="Search verified businesses, plain language…" style="flex:1;background:none;font-family:'Crimson Pro',serif;font-size:14px;color:var(--fg-strong)" />
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--subtle);border:1px solid var(--strong);padding:2px 5px">⌘K</span>
+      </div>
+      <span onClick="{{ toggleTheme }}" title="Toggle light / dark" style="display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);background:var(--raised);padding:8px 12px;cursor:pointer;line-height:1">{{ themeGlyph }} {{ themeLabel }}</span>
+      <div style="display:flex;align-items:center;gap:10px;border-left:1px solid var(--border);padding-left:20px">
+        <div style="width:7px;height:7px;background:#5a9a7a;border-radius:9999px"></div>
+        <div>
+          <div style="font-family:'Crimson Pro',serif;font-size:13px;color:var(--fg-strong);line-height:1">Meridian Logistics</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.12em;color:var(--muted)">VERIFIED · ROTTERDAM</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROUTED CONTENT -->
+    <div style="flex:1;min-width:0">
+
+      <!-- ===== DASHBOARD ===== -->
+      <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:36px 40px">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:32px">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:#c44b1b;margin-bottom:10px">/ Tuesday · 16 June</div>
+            <h1 style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:0.9;color:var(--fg-strong)">GOOD MORNING, ELENA.</h1>
+          </div>
+          <div onClick="{{ goDiscovery }}" style="background:#c44b1b;padding:14px 24px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#0a0a0a;cursor:pointer">＋ New session</div>
+        </div>
+        <!-- stat grid -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--border);margin-bottom:32px">
+          <sc-for list="{{ dashStats }}" as="s" hint-placeholder-count="4">
+          <div style="padding:26px 24px;border-right:1px solid var(--border);position:relative">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--muted);margin-bottom:14px">{{ s.label }}</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:60px;line-height:0.85;color:{{ s.color }}">{{ s.value }}</div>
+            <div style="font-family:'Crimson Pro',serif;font-size:13px;color:var(--subtle2);margin-top:8px">{{ s.note }}</div>
+          </div>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:24px">
+          <!-- recent activity -->
+          <div style="border:1px solid var(--border)">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border)">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--fg)">Recent activity</div>
+              <div onClick="{{ goSessions }}" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;color:#c44b1b;cursor:pointer">All sessions →</div>
+            </div>
+            <sc-for list="{{ activityFeed }}" as="a" hint-placeholder-count="5">
+            <div onClick="{{ a.go }}" style="display:flex;align-items:center;gap:16px;padding:16px 24px;border-bottom:1px solid var(--line);cursor:pointer">
+              <div style="width:34px;height:34px;border:1px solid var(--strong);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--fg-strong);flex-shrink:0">{{ a.initials }}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong);line-height:1.3">{{ a.title }}</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.06em;color:var(--muted);text-transform:uppercase;margin-top:3px">{{ a.meta }}</div>
+              </div>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:{{ a.tagColor }};border:1px solid {{ a.tagBorder }};padding:3px 7px">{{ a.tag }}</span>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--subtle);width:40px;text-align:right">{{ a.time }}</div>
+            </div>
+            </sc-for>
+          </div>
+          <!-- quick discovery -->
+          <div style="display:flex;flex-direction:column;gap:24px">
+            <div style="border:1px solid var(--border);padding:24px;background-image:radial-gradient(ellipse at 100% 0%,rgba(196,75,27,0.07),transparent 60%)">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#c44b1b;margin-bottom:14px">Find a partner</div>
+              <p style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--muted);line-height:1.5;margin-bottom:18px">Describe who you're looking for. Our AI matches against 2,400 verified profiles.</p>
+              <div style="display:flex;align-items:center;border:1px solid var(--strong);background:var(--bg);padding:11px 14px;margin-bottom:14px">
+                <input value="{{ topSearch }}" onInput="{{ onTopSearch }}" placeholder="e.g. textile manufacturer in Portugal" style="flex:1;background:none;font-family:'Crimson Pro',serif;font-size:14px;color:var(--fg-strong)" />
+              </div>
+              <div onClick="{{ goDiscovery }}" style="text-align:center;border:1px solid #c44b1b;color:#c44b1b;padding:11px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;cursor:pointer">Search network →</div>
+            </div>
+            <div style="border:1px solid var(--border);padding:24px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--fg);margin-bottom:16px">Verification status</div>
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+                <span style="width:8px;height:8px;background:#5a9a7a;border-radius:9999px"></span>
+                <span style="font-family:'Crimson Pro',serif;font-size:16px;color:var(--fg-strong)">Verified business</span>
+              </div>
+              <p style="font-family:'Crimson Pro',serif;font-size:14px;color:var(--subtle2);line-height:1.5">Your profile is public and discoverable. Verified 14 March 2026.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ===== DISCOVERY ===== -->
+      <sc-if value="{{ isDiscovery }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:36px 40px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:#c44b1b;margin-bottom:10px">/ Discovery</div>
+        <h1 style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:0.9;color:var(--fg-strong);margin-bottom:8px">FIND VERIFIED PARTNERS</h1>
+        <p style="font-family:'Crimson Pro',serif;font-size:17px;color:var(--muted);margin-bottom:28px;max-width:560px">Search in plain language. Only verified businesses with public profiles appear here.</p>
+        <div style="display:flex;gap:12px;margin-bottom:20px">
+          <div style="flex:1;display:flex;align-items:center;gap:12px;border:1px solid var(--strong);background:var(--raised);padding:14px 18px">
+            <span style="color:#c44b1b;font-size:15px">⌕</span>
+            <input value="{{ topSearch }}" onInput="{{ onTopSearch }}" placeholder="e.g. compostable packaging supplier in Spain" style="flex:1;background:none;font-family:'Crimson Pro',serif;font-size:16px;color:var(--fg-strong)" />
+          </div>
+          <span style="display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#ffffff;background:#c44b1b;padding:0 28px;cursor:pointer;flex-shrink:0">⌕ Search</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px">
+          <sc-for list="{{ industryChips }}" as="c" hint-placeholder-count="9">
+          <span onClick="{{ c.go }}" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:{{ c.ink }};border:1px solid {{ c.border }};background:{{ c.bg }};padding:7px 13px;cursor:pointer">{{ c.label }}</span>
+          </sc-for>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:0">{{ discCount }} verified results</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);border:1px solid var(--border);border-top:none">
+          <sc-for list="{{ filteredBusinesses }}" as="b" hint-placeholder-count="6">
+          <div style="padding:24px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;align-items:flex-start;gap:14px">
+              <div style="width:44px;height:44px;border:1px solid var(--strong);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--fg-strong);flex-shrink:0">{{ b.initials }}</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+                  <span style="font-family:'Crimson Pro',serif;font-size:19px;color:var(--fg-strong);line-height:1.1">{{ b.name }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:#c44b1b;border:1px solid #7a2a0c;padding:2px 5px;flex-shrink:0">✓</span>
+                </div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.08em;color:var(--muted);text-transform:uppercase">{{ b.industry }} · {{ b.city }}, {{ b.country }}</div>
+              </div>
+            </div>
+            <p style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--soft2);line-height:1.55;flex:1">{{ b.desc }}</p>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--subtle2)">{{ b.website }}</span>
+              <span onClick="{{ b.start }}" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#0a0a0a;background:#c44b1b;padding:9px 16px;cursor:pointer">Open session →</span>
+            </div>
+          </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ===== SESSIONS LIST ===== -->
+      <sc-if value="{{ isSessions }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:36px 40px">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:#c44b1b;margin-bottom:10px">/ Sessions</div>
+            <h1 style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:0.9;color:var(--fg-strong)">DEAL ROOMS</h1>
+          </div>
+          <div onClick="{{ goDiscovery }}" style="border:1px solid #c44b1b;color:#c44b1b;padding:13px 22px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;cursor:pointer">＋ New session</div>
+        </div>
+        <sc-for list="{{ sessionGroups }}" as="g" hint-placeholder-count="3">
+        <div style="margin-bottom:32px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+            <span style="width:7px;height:7px;border-radius:9999px;background:{{ g.dot }}"></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--fg)">{{ g.title }}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--subtle)">{{ g.count }}</span>
+            <span style="flex:1;height:1px;background:var(--border)"></span>
+          </div>
+          <sc-if value="{{ g.empty }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Crimson Pro',serif;font-size:14px;color:var(--subtle);padding:8px 0 4px;font-style:italic">No {{ g.kind }} sessions.</div></sc-if>
+          <div style="border:1px solid var(--border)">
+            <sc-for list="{{ g.items }}" as="s" hint-placeholder-count="2">
+            <div onClick="{{ s.open }}" style="display:flex;align-items:center;gap:16px;padding:18px 22px;border-bottom:1px solid var(--line);cursor:pointer">
+              <div style="width:40px;height:40px;border:1px solid var(--strong);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--fg-strong);flex-shrink:0">{{ s.initials }}</div>
+              <div style="width:200px;flex-shrink:0">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <span style="font-family:'Crimson Pro',serif;font-size:17px;color:var(--fg-strong)">{{ s.name }}</span>
+                  <sc-if value="{{ s.demo }}" hint-placeholder-val="{{ false }}"><span style="font-family:'JetBrains Mono',monospace;font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:#7a5ab0;border:1px solid #3a2a5a;padding:2px 4px">AI</span></sc-if>
+                </div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.06em;color:var(--muted);text-transform:uppercase;margin-top:2px">{{ s.industry }}</div>
+              </div>
+              <div style="flex:1;min-width:0;font-family:'Crimson Pro',serif;font-size:15px;color:var(--soft2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.preview }}</div>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:{{ s.tagColor }};border:1px solid {{ s.tagBorder }};padding:4px 8px;flex-shrink:0">{{ s.tag }}</span>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--subtle);width:42px;text-align:right;flex-shrink:0">{{ s.time }}</div>
+            </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <!-- ===== SESSION DETAIL ===== -->
+      <sc-if value="{{ isSession }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;height:calc(100vh - 64px)">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--border)">
+          <!-- session header -->
+          <div style="display:flex;align-items:center;gap:14px;padding:18px 28px;border-bottom:1px solid var(--border);flex-shrink:0">
+            <span onClick="{{ goSessions }}" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);cursor:pointer">←</span>
+            <div style="width:40px;height:40px;border:1px solid var(--strong);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--fg-strong);flex-shrink:0">{{ sxInitials }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-family:'Crimson Pro',serif;font-size:18px;color:var(--fg-strong)">{{ sxName }}</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:#c44b1b;border:1px solid #7a2a0c;padding:2px 5px">✓ Verified</span>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.06em;color:var(--muted);text-transform:uppercase;margin-top:2px">{{ sxIndustry }} · {{ sxCity }}</div>
+            </div>
+            <span onClick="{{ toggleReceipt }}" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#0a0a0a;background:#c44b1b;padding:10px 16px;cursor:pointer">＋ Receipt</span>
+          </div>
+          <!-- demo banner -->
+          <sc-if value="{{ sxDemo }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:10px;padding:11px 28px;background:rgba(122,90,176,0.08);border-bottom:1px solid #2a2040;flex-shrink:0">
+            <span style="width:6px;height:6px;border-radius:9999px;background:#7a5ab0;animation:nx-dot 1.6s infinite"></span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#a98fd0;text-transform:uppercase">AI Demo Mode — this is a fictional business; replies are AI-generated</span>
+          </div>
+          </sc-if>
+          <!-- messages -->
+          <div style="flex:1;overflow-y:auto;padding:28px;display:flex;flex-direction:column;gap:18px">
+            <sc-for list="{{ chat }}" as="m" hint-placeholder-count="4">
+              <sc-if value="{{ m.isAi }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px solid #2a2040;background:rgba(122,90,176,0.06);padding:18px 20px;margin:4px 0">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#a98fd0">◇ NexusB2B AI · Introduction</span>
+                </div>
+                <p style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg);line-height:1.6">{{ m.text }}</p>
+              </div>
+              </sc-if>
+              <sc-if value="{{ m.isMe }}" hint-placeholder-val="{{ false }}">
+              <div style="align-self:flex-end;max-width:74%">
+                <div style="background:#c44b1b;color:#ffffff;padding:13px 17px;font-family:'Crimson Pro',serif;font-size:16px;line-height:1.5">{{ m.text }}</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--subtle);text-align:right;margin-top:5px">You · {{ m.time }}</div>
+              </div>
+              </sc-if>
+              <sc-if value="{{ m.isThem }}" hint-placeholder-val="{{ false }}">
+              <div style="align-self:flex-start;max-width:74%">
+                <div style="background:var(--raised);border:1px solid var(--border);color:var(--fg-bright);padding:13px 17px;font-family:'Crimson Pro',serif;font-size:16px;line-height:1.5">{{ m.text }}</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--subtle);margin-top:5px">{{ sxName }} · {{ m.time }}<sc-if value="{{ m.demo }}" hint-placeholder-val="{{ false }}"><span style="color:#7a5ab0"> · AI</span></sc-if></div>
+              </div>
+              </sc-if>
+              <sc-if value="{{ m.isLummy }}" hint-placeholder-val="{{ false }}">
+              <div style="align-self:flex-start;max-width:82%;border:1px solid #4a3a6a;background:rgba(122,90,176,0.10);padding:14px 18px">
+                <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#a98fd0">✦ Lummy · AI assistant</span>
+                </div>
+                <p style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-bright);line-height:1.55">{{ m.text }}</p>
+              </div>
+              </sc-if>
+            </sc-for>
+          </div>
+          <!-- composer -->
+          <div style="border-top:1px solid var(--border);padding:16px 28px;flex-shrink:0;display:flex;align-items:center;gap:12px">
+            <span onClick="{{ askLummy }}" title="Ask Lummy a question" style="display:inline-flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#a98fd0;border:1px solid #4a3a6a;background:rgba(122,90,176,0.12);padding:13px 15px;cursor:pointer;white-space:nowrap;flex-shrink:0">✦ Ask Lummy</span>
+            <input value="{{ draft }}" onInput="{{ onDraft }}" onKeyDown="{{ onComposerKey }}" placeholder="Write a message, or ask Lummy a question…" style="flex:1;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'Crimson Pro',serif;font-size:16px;color:var(--fg-strong)" />
+            <span onClick="{{ sendMsg }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#ffffff;background:#c44b1b;padding:14px 22px;cursor:pointer">Send →</span>
+          </div>
+        </div>
+        <!-- right rail -->
+        <div style="width:300px;flex-shrink:0;overflow-y:auto;padding:24px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--fg);margin-bottom:16px">Session</div>
+          <div style="border:1px solid var(--border);padding:18px;margin-bottom:20px">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Counterpart</div>
+            <div style="font-family:'Crimson Pro',serif;font-size:16px;color:var(--fg-strong);margin-bottom:14px">{{ sxName }}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Status</div>
+            <div style="font-family:'Crimson Pro',serif;font-size:15px;color:{{ sxStatusColor }};margin-bottom:14px;text-transform:capitalize">{{ sxStatus }}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Opened by</div>
+            <div style="font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg)">{{ sxOpenedBy }}</div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--fg);margin-bottom:14px">Receipts in this room</div>
+          <sc-if value="{{ sxNoReceipts }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Crimson Pro',serif;font-size:14px;color:var(--subtle);font-style:italic;margin-bottom:8px">No receipts yet. Create one to record the deal.</div></sc-if>
+          <sc-for list="{{ sxReceipts }}" as="r" hint-placeholder-count="1">
+          <div onClick="{{ r.open }}" style="border:1px solid var(--border);padding:14px;margin-bottom:10px;cursor:pointer">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted)">{{ r.ref }}</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:{{ r.statusColor }}">{{ r.statusLabel }}</span>
+            </div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--fg-strong);line-height:1">{{ r.amount }}</div>
+            <div style="font-family:'Crimson Pro',serif;font-size:13px;color:var(--muted);margin-top:4px;line-height:1.3">{{ r.desc }}</div>
+          </div>
+          </sc-for>
+        </div>
+      </div>
+      <!-- receipt modal -->
+      <sc-if value="{{ showReceipt }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:50;padding:24px">
+        <div style="width:480px;max-width:100%;background:var(--panel);border:1px solid var(--strong)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border)">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#c44b1b">New receipt</span>
+            <span onClick="{{ toggleReceipt }}" style="font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--muted);cursor:pointer">✕</span>
+          </div>
+          <div style="padding:24px">
+            <p style="font-family:'Crimson Pro',serif;font-size:14px;color:var(--muted);line-height:1.5;margin-bottom:20px">To <strong style="color:var(--fg-strong)">{{ sxName }}</strong>. Payment details are pulled from your stored banking info and shown on the receipt.</p>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Amount (EUR)</div>
+            <input value="{{ rcAmount }}" onInput="{{ onRcAmount }}" placeholder="48500" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:13px 15px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--fg-strong);margin-bottom:18px" />
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Description</div>
+            <textarea value="{{ rcDesc }}" onInput="{{ onRcDesc }}" placeholder="What is this for?" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:13px 15px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong);min-height:72px;resize:vertical;margin-bottom:22px"></textarea>
+            <div style="display:flex;gap:12px">
+              <span onClick="{{ toggleReceipt }}" style="flex:1;text-align:center;border:1px solid var(--strong);color:var(--fg);padding:13px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer">Cancel</span>
+              <span onClick="{{ createReceipt }}" style="flex:1;text-align:center;background:#c44b1b;color:#0a0a0a;padding:13px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer">Create & share →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+      </sc-if>
+
+      <!-- ===== RECEIPTS LIST ===== -->
+      <sc-if value="{{ isReceipts }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:36px 40px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:#c44b1b;margin-bottom:10px">/ Receipts</div>
+        <h1 style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:0.9;color:var(--fg-strong);margin-bottom:8px">RECEIPTS</h1>
+        <p style="font-family:'Crimson Pro',serif;font-size:17px;color:var(--muted);margin-bottom:28px;max-width:560px">Invoices and agreement records exchanged inside sessions. Linked permanently to the deal.</p>
+        <div style="display:grid;grid-template-columns:120px 1fr 150px 110px 110px;padding:0 22px 12px;border-bottom:1px solid var(--border)">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--subtle2)">Ref</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--subtle2)">Counterparty / detail</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--subtle2)">Amount</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--subtle2)">Direction</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--subtle2);text-align:right">Status</span>
+        </div>
+        <div style="border:1px solid var(--border);border-top:none">
+          <sc-for list="{{ receiptRows }}" as="r" hint-placeholder-count="3">
+          <div onClick="{{ r.open }}" style="display:grid;grid-template-columns:120px 1fr 150px 110px 110px;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line);cursor:pointer">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)">{{ r.ref }}</span>
+            <div style="min-width:0;padding-right:16px">
+              <div style="font-family:'Crimson Pro',serif;font-size:16px;color:var(--fg-strong);line-height:1.2">{{ r.counterparty }}</div>
+              <div style="font-family:'Crimson Pro',serif;font-size:13px;color:var(--soft);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.desc }}</div>
+            </div>
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--fg-strong);line-height:1">{{ r.amount }}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:{{ r.dirColor }}">{{ r.direction }}</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:{{ r.statusColor }};border:1px solid {{ r.statusBorder }};padding:4px 8px;justify-self:end">{{ r.statusLabel }}</span>
+          </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ===== RECEIPT DETAIL ===== -->
+      <sc-if value="{{ isReceipt }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:36px 40px;animation:nx-rise 0.4s ease;max-width:760px">
+        <span onClick="{{ goReceipts }}" style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);cursor:pointer">← All receipts</span>
+        <div style="border:1px solid var(--strong);margin-top:20px">
+          <!-- header -->
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:28px 32px;border-bottom:1px solid var(--border);background-image:radial-gradient(ellipse at 100% 0%,rgba(196,75,27,0.06),transparent 60%)">
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#c44b1b;margin-bottom:10px">Receipt · {{ rxRef }}</div>
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:56px;line-height:0.9;color:var(--fg-strong)">{{ rxAmount }}</div>
+            </div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:{{ rxStatusColor }};border:1px solid {{ rxStatusBorder }};padding:7px 12px">{{ rxStatusLabel }}</span>
+          </div>
+          <!-- from / to -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border)">
+            <div style="padding:24px 32px;border-right:1px solid var(--border)">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">From</div>
+              <div style="font-family:'Crimson Pro',serif;font-size:18px;color:var(--fg-strong)">{{ rxFromName }}</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px">{{ rxFromMeta }}</div>
+            </div>
+            <div style="padding:24px 32px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">To</div>
+              <div style="font-family:'Crimson Pro',serif;font-size:18px;color:var(--fg-strong)">{{ rxToName }}</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px">{{ rxToMeta }}</div>
+            </div>
+          </div>
+          <!-- line item -->
+          <div style="padding:24px 32px;border-bottom:1px solid var(--border)">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Description</div>
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px">
+              <p style="font-family:'Crimson Pro',serif;font-size:17px;color:var(--fg-bright);line-height:1.6;flex:1">{{ rxDesc }}</p>
+              <span style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--fg-strong);white-space:nowrap">{{ rxAmount }}</span>
+            </div>
+          </div>
+          <!-- payment details -->
+          <div style="padding:24px 32px;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)">Payment details</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:#5a9a7a;border:1px solid #274a3a;padding:2px 6px">🔒 AES-256 encrypted</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+              <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--subtle2);margin-bottom:5px">Account holder</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--fg-strong)">{{ rxBankHolder }}</div></div>
+              <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--subtle2);margin-bottom:5px">Bank</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--fg-strong)">{{ rxBankName }}</div></div>
+              <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--subtle2);margin-bottom:5px">IBAN</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--fg-strong)">{{ rxBankIban }}</div></div>
+              <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--subtle2);margin-bottom:5px">SWIFT / BIC</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--fg-strong)">{{ rxBankSwift }}</div></div>
+            </div>
+          </div>
+          <!-- footer -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:22px 32px;gap:16px">
+            <div style="display:flex;align-items:center;gap:16px">
+              <span onClick="{{ rxDownload }}" title="Download receipt" style="display:inline-flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--fg);border:1px solid var(--strong);padding:11px 16px;cursor:pointer">⤓ Download</span>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--subtle2)">Issued {{ rxDate }} · session {{ rxSession }}</span>
+            </div>
+            <sc-if value="{{ rxCanAck }}" hint-placeholder-val="{{ false }}">
+            <span onClick="{{ rxAck }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#ffffff;background:#c44b1b;padding:12px 22px;cursor:pointer">✓ Acknowledge receipt</span>
+            </sc-if>
+            <sc-if value="{{ rxAcked }}" hint-placeholder-val="{{ false }}">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#5a9a7a">✓ Acknowledged</span>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ===== TEAM ===== -->
+      <sc-if value="{{ isTeam }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:36px 40px">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px">
+          <div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:#c44b1b;margin-bottom:10px">/ Team</div>
+            <h1 style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:0.9;color:var(--fg-strong)">MERIDIAN TEAM</h1>
+          </div>
+          <div style="border:1px solid #c44b1b;color:#c44b1b;padding:13px 22px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;cursor:pointer">＋ Invite member</div>
+        </div>
+        <!-- admin-only oversight banner -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.16em;text-transform:uppercase;color:#c44b1b;border:1px solid #7a2a0c;padding:3px 7px">Admin view</span>
+          <span style="font-family:'Crimson Pro',serif;font-size:14px;color:var(--muted)">As business admin you can see each member's sessions, who they've spoken with, and their activity.</span>
+        </div>
+        <!-- totals strip -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--border);margin-bottom:24px">
+          <div style="padding:20px 22px;border-right:1px solid var(--border)">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Active members</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:46px;line-height:0.85;color:var(--fg-strong)">{{ teamTotals.members }}</div>
+          </div>
+          <div style="padding:20px 22px;border-right:1px solid var(--border)">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Sessions handled</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:46px;line-height:0.85;color:var(--fg-strong)">{{ teamTotals.sessions }}</div>
+          </div>
+          <div style="padding:20px 22px;border-right:1px solid var(--border)">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Messages sent</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:46px;line-height:0.85;color:#c44b1b">{{ teamTotals.messages }}</div>
+          </div>
+          <div style="padding:20px 22px">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Receipts created</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:46px;line-height:0.85;color:var(--fg-strong)">{{ teamTotals.receipts }}</div>
+          </div>
+        </div>
+        <!-- member cards -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <sc-for list="{{ teamRows }}" as="m" hint-placeholder-count="4">
+          <div style="border:1px solid var(--border);background:var(--raised)">
+            <!-- top -->
+            <div style="display:flex;align-items:center;gap:16px;padding:18px 22px;border-bottom:1px solid var(--line)">
+              <div style="width:42px;height:42px;border:1px solid var(--strong);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:{{ m.ink }};flex-shrink:0">{{ m.initials }}</div>
+              <div style="min-width:0">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-family:'Crimson Pro',serif;font-size:18px;color:{{ m.ink }}">{{ m.name }}</span>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:{{ m.roleColor }}">· {{ m.roleLabel }}</span>
+                </div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px">{{ m.email }}</div>
+              </div>
+              <div style="flex:1"></div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.06em;color:var(--subtle);text-transform:uppercase;text-align:right">Last active<br><span style="color:var(--fg)">{{ m.lastActive }}</span></div>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:{{ m.statusColor }};border:1px solid {{ m.statusBorder }};padding:4px 8px">{{ m.statusLabel }}</span>
+              <span onClick="{{ m.toggle }}" style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:{{ m.actionColor }};cursor:pointer">{{ m.action }}</span>
+            </div>
+            <!-- bottom: stats + talked to -->
+            <div style="display:grid;grid-template-columns:280px 1fr;gap:0">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);border-right:1px solid var(--line)">
+                <div style="padding:16px 18px;border-right:1px solid var(--line)">
+                  <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:0.9;color:var(--fg-strong)">{{ m.sessionsCount }}</div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-top:4px">Sessions</div>
+                </div>
+                <div style="padding:16px 18px;border-right:1px solid var(--line)">
+                  <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:0.9;color:#c44b1b">{{ m.messages }}</div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-top:4px">Messages</div>
+                </div>
+                <div style="padding:16px 18px">
+                  <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:0.9;color:var(--fg-strong)">{{ m.receipts }}</div>
+                  <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-top:4px">Receipts</div>
+                </div>
+              </div>
+              <div style="padding:16px 20px">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.16em;text-transform:uppercase;color:var(--subtle);margin-bottom:10px">Talking with</div>
+                <sc-if value="{{ m.noTalk }}" hint-placeholder-val="{{ false }}"><div style="font-family:'Crimson Pro',serif;font-size:14px;color:var(--subtle);font-style:italic">No active sessions assigned.</div></sc-if>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                  <sc-for list="{{ m.talkedTo }}" as="c" hint-placeholder-count="2">
+                  <span style="display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);padding:5px 10px 5px 6px">
+                    <span style="width:22px;height:22px;border:1px solid var(--strong);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:11px;color:var(--fg-strong)">{{ c.initials }}</span>
+                    <span style="font-family:'Crimson Pro',serif;font-size:14px;color:var(--fg)">{{ c.name }}</span>
+                    <sc-if value="{{ c.demo }}" hint-placeholder-val="{{ false }}"><span style="font-family:'JetBrains Mono',monospace;font-size:7px;letter-spacing:0.1em;text-transform:uppercase;color:#7a5ab0;border:1px solid #3a2a5a;padding:1px 4px">AI</span></sc-if>
+                  </span>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+          </sc-for>
+          <!-- pending invite -->
+          <div style="display:flex;align-items:center;gap:14px;padding:16px 22px;border:1px dashed var(--strong)">
+            <div style="width:38px;height:38px;border:1px dashed var(--strong);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--subtle);flex-shrink:0">@</div>
+            <div style="min-width:0;flex:1">
+              <div style="font-family:'Crimson Pro',serif;font-size:16px;color:var(--fg)">sara.lindqvist@meridian.io</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)">Invitation sent · awaiting acceptance</div>
+            </div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:#c8a240;border:1px solid #4a4020;padding:4px 8px">Pending</span>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ===== SETTINGS (ACCOUNT + BUSINESS) ===== -->
+      <sc-if value="{{ inSettings }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:36px 40px;animation:nx-rise 0.4s ease;max-width:780px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:#c44b1b;margin-bottom:10px">/ Settings</div>
+        <h1 style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:0.9;color:var(--fg-strong);margin-bottom:24px">SETTINGS</h1>
+        <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:32px">
+          <span onClick="{{ goAccount }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:{{ tabAccountInk }};border-bottom:2px solid {{ tabAccountEdge }};padding:0 4px 14px;margin-right:28px;cursor:pointer">Account</span>
+          <span onClick="{{ goBusiness }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:{{ tabBusinessInk }};border-bottom:2px solid {{ tabBusinessEdge }};padding:0 4px 14px;cursor:pointer">Business</span>
+        </div>
+
+        <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--fg);margin-bottom:20px">Profile</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:40px">
+          <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Display name</div><input value="Elena Voss" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong)" /></div>
+          <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Email</div><input value="admin@meridian.io" style="width:100%;background:var(--bg);border:1px solid var(--line);padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted)" /></div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--fg);margin-bottom:20px">Change password</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px">
+          <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">New password</div><input type="password" placeholder="••••••••" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--fg-strong)" /></div>
+          <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Confirm</div><input type="password" placeholder="••••••••" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--fg-strong)" /></div>
+        </div>
+        <span style="display:inline-block;background:#c44b1b;color:#0a0a0a;padding:14px 28px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;cursor:pointer">Save changes</span>
+        </sc-if>
+
+        <sc-if value="{{ isBusiness }}" hint-placeholder-val="{{ false }}">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--fg);margin-bottom:20px">Company profile</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+          <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Company name</div><input value="Meridian Logistics" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong)" /></div>
+          <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">City</div><input value="Rotterdam" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong)" /></div>
+          <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Website</div><input value="meridian.io" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong)" /></div>
+          <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Industry</div><input value="Freight & Logistics" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong)" /></div>
+        </div>
+        <div style="margin-bottom:40px"><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Description</div><textarea style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'Crimson Pro',serif;font-size:15px;color:var(--fg-strong);min-height:84px;resize:vertical">Multimodal freight forwarding across Northern Europe. Sea, rail and last-mile, with bonded warehousing in three ports.</textarea></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--fg)">Payment details</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;color:#5a9a7a;border:1px solid #274a3a;padding:2px 6px">🔒 Encrypted at rest</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px">
+          <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Account holder</div><input value="Meridian Logistics B.V." style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--fg-strong)" /></div>
+          <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Bank name</div><input value="ING Bank N.V." style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--fg-strong)" /></div>
+          <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">IBAN</div><input value="NL91 INGB 0002 4455 88" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--fg-strong)" /></div>
+          <div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">SWIFT / BIC</div><input value="INGBNL2A" style="width:100%;background:var(--raised);border:1px solid var(--border);padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--fg-strong)" /></div>
+        </div>
+        <span style="display:inline-block;background:#c44b1b;color:#0a0a0a;padding:14px 28px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;cursor:pointer">Save business profile</span>
+        </sc-if>
+      </div>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ DEMO DISCLAIMER MODAL ============ -->
+<sc-if value="{{ showIntro }}" hint-placeholder-val="{{ true }}">
+<div style="position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:24px">
+  <div style="width:660px;max-width:100%;background:var(--panel);border:1px solid var(--strong);max-height:90vh;overflow-y:auto">
+    <div style="padding:34px 40px 0;background-image:radial-gradient(ellipse at 100% 0%,rgba(196,75,27,0.10),transparent 60%)">
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:16px">
+        <div style="width:22px;height:22px;position:relative;flex-shrink:0">
+          <div style="position:absolute;width:7px;height:7px;background:#c44b1b;top:0;left:0"></div>
+          <div style="position:absolute;width:7px;height:7px;border:1px solid #c44b1b;top:0;right:0"></div>
+          <div style="position:absolute;width:7px;height:7px;border:1px solid #c44b1b;bottom:0;left:0"></div>
+          <div style="position:absolute;width:7px;height:7px;background:#c44b1b;bottom:0;right:0"></div>
+        </div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.28em;text-transform:uppercase;color:#c44b1b">Demo environment</span>
+      </div>
+      <h2 style="font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:0.9;color:var(--fg-strong);margin-bottom:18px">YOU'RE IN A<br>DEMONSTRATION.</h2>
+    </div>
+    <div style="padding:4px 40px 0">
+      <p style="font-family:'Crimson Pro',serif;font-size:17px;line-height:1.6;color:var(--fg);margin-bottom:16px">This is a live preview of <strong style="color:var(--fg-strong)">NexusB2B</strong>. The companies you'll meet first are <strong style="color:var(--fg-strong)">fictional</strong> and seeded only for demonstration — but the platform itself is <strong style="color:var(--fg-strong)">fully working</strong>. You can register a real business and run genuine tests end to end.</p>
+      <p style="font-family:'Crimson Pro',serif;font-size:17px;line-height:1.6;color:var(--fg);margin-bottom:22px">Because the seeded companies aren't real, an <strong style="color:var(--fg-strong)">AI replies on their behalf</strong> inside sessions so the flow feels complete — a demo convenience only.</p>
+    </div>
+    <div style="margin:0 40px 18px;border:1px solid var(--border);background:var(--raised)">
+      <div style="display:flex;align-items:center;gap:9px;padding:15px 20px 0">
+        <span style="width:6px;height:6px;border-radius:9999px;background:#7a5ab0"></span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#a98fd0">How the AI works in real operation</span>
+      </div>
+      <ul style="list-style:none;padding:14px 20px 18px;margin:0;display:flex;flex-direction:column;gap:11px">
+        <li style="display:flex;gap:11px;font-family:'Crimson Pro',serif;font-size:16px;line-height:1.5;color:var(--fg)"><span style="color:#c44b1b;flex-shrink:0">—</span><span>It only answers the <strong style="color:var(--fg-strong)">specific question it's asked</strong> — for example a market price.</span></li>
+        <li style="display:flex;gap:11px;font-family:'Crimson Pro',serif;font-size:16px;line-height:1.5;color:var(--fg)"><span style="color:#c44b1b;flex-shrink:0">—</span><span>It <strong style="color:var(--fg-strong)">cannot read or reason about your conversation.</strong> Messages stay private between the two businesses.</span></li>
+        <li style="display:flex;gap:11px;font-family:'Crimson Pro',serif;font-size:16px;line-height:1.5;color:var(--fg)"><span style="color:#c44b1b;flex-shrink:0">—</span><span>Anything outside that scope is <strong style="color:var(--fg-strong)">declined.</strong></span></li>
+      </ul>
+    </div>
+    <div style="margin:0 40px 22px;border-left:2px solid #5a9a7a;background:rgba(90,154,122,0.08);padding:14px 20px">
+      <div style="font-family:'Crimson Pro',serif;font-size:16px;line-height:1.5;color:var(--fg)"><strong style="color:var(--fg-strong)">Real businesses have no AI standing in.</strong> Their admins and members receive email notifications and connect with clients themselves.</div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 40px 30px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.08em;color:var(--subtle)">Shown each time you open NexusB2B.</span>
+      <span onClick="{{ dismissIntro }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#0a0a0a;background:#c44b1b;padding:15px 28px;cursor:pointer;flex-shrink:0">I understand — continue →</span>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:960}}">
+class Component extends DCLogic {
+  state = {
+    route: 'landing',
+    theme: 'light',
+    showIntro: true,
+    activeSessionId: 's1',
+    activeReceiptId: 'r2',
+    topSearch: '',
+    discIndustry: 'All',
+    draft: '',
+    showReceipt: false,
+    rcAmount: '',
+    rcDesc: '',
+    msgBump: {},
+    rcBump: {},
+    sessions: null,
+    messages: null,
+    receipts: null,
+    team: null,
+  };
+
+  // ---------- static data ----------
+  businesses = [
+    { id:'me', name:'Meridian Logistics', initials:'ML', industry:'Freight & Logistics', city:'Rotterdam', country:'Netherlands', website:'meridian.io', desc:'Multimodal freight forwarding across Northern Europe. Sea, rail and last-mile, with bonded warehousing in three ports.', demo:false },
+    { id:'b1', name:'Aurora Textiles', initials:'AT', industry:'Manufacturing', city:'Porto', country:'Portugal', website:'auroratextiles.pt', desc:'Vertically integrated knitwear and technical fabrics. GOTS-certified, 40,000 units / week capacity.', demo:true },
+    { id:'b2', name:'Cobalt Cloud', initials:'CC', industry:'SaaS / IT', city:'Berlin', country:'Germany', website:'cobalt.cloud', desc:'EU-hosted infrastructure and managed Kubernetes for regulated industries. ISO 27001.', demo:true },
+    { id:'b3', name:'Stonebridge Capital', initials:'SC', industry:'Finance', city:'London', country:'United Kingdom', website:'stonebridge.co.uk', desc:'Trade finance and working-capital facilities for mid-market importers and exporters.', demo:false },
+    { id:'b4', name:'Northwind Foods', initials:'NW', industry:'Food & Beverage', city:'Lyon', country:'France', website:'northwindfoods.fr', desc:'Specialty ingredient distribution — cocoa, vanilla and pulses — sourced direct from origin co-ops.', demo:false },
+    { id:'b5', name:'Helix Pharma', initials:'HX', industry:'Pharmaceuticals', city:'Basel', country:'Switzerland', website:'helixpharma.ch', desc:'Contract manufacturing of sterile injectables and cold-chain logistics for clinical supply.', demo:true },
+    { id:'b6', name:'Verde Packaging', initials:'VP', industry:'Packaging', city:'Valencia', country:'Spain', website:'verdepack.es', desc:'Compostable and recycled-fibre packaging for food and cosmetics brands. Cradle-to-cradle certified.', demo:false },
+    { id:'b7', name:'Ironclad Steel', initials:'IC', industry:'Metals', city:'Essen', country:'Germany', website:'ironclad-steel.de', desc:'Cold-rolled and galvanised steel coil for automotive and construction supply chains.', demo:false },
+    { id:'b8', name:'Lumen Media', initials:'LM', industry:'Marketing', city:'Amsterdam', country:'Netherlands', website:'lumenmedia.nl', desc:'B2B demand-generation and brand studio. Works with industrial and logistics clients across the EU.', demo:true },
+    { id:'b9', name:'Tidewater Seafoods', initials:'TW', industry:'Food & Beverage', city:'Bergen', country:'Norway', website:'tidewater.no', desc:'MSC-certified frozen seafood exporter. Cold-chain from vessel to port across 20 markets.', demo:false },
+  ];
+
+  industries = ['All','Manufacturing','SaaS / IT','Finance','Food & Beverage','Pharmaceuticals','Packaging','Metals','Marketing'];
+
+  seedSessions(){
+    return [
+      { id:'s1', withId:'b1', status:'active', initiatedByMe:true, time:'2m', assignedTo:'t1', preview:'Sounds great — can you share lead times for the technical jersey?' },
+      { id:'s2', withId:'b3', status:'active', initiatedByMe:false, time:'1h', assignedTo:'t1', preview:'Our trade-finance desk can cover the Porto shipment. Terms attached.' },
+      { id:'s3', withId:'b2', status:'pending', initiatedByMe:true, time:'3h', assignedTo:'t2', preview:'Awaiting Cobalt Cloud to accept your session request.' },
+      { id:'s4', withId:'b5', status:'pending', initiatedByMe:true, time:'1d', assignedTo:'t2', preview:'Awaiting Helix Pharma to accept your session request.' },
+      { id:'s5', withId:'b4', status:'closed', initiatedByMe:false, time:'6d', assignedTo:'t3', preview:'Deal closed. Receipt acknowledged. Thanks for the smooth handover.' },
+    ];
+  }
+  seedMessages(){
+    return {
+      s1:[
+        { from:'ai', text:'NexusB2B introduction — Meridian Logistics (Rotterdam, Freight & Logistics) is reaching out to Aurora Textiles (Porto, Manufacturing). Meridian operates multimodal freight across Northern Europe and is exploring a recurring lane for finished knitwear from Porto to Rotterdam. Aurora is a GOTS-certified manufacturer with 40,000 units/week capacity. The floor is yours.', time:'09:02' },
+        { from:'me', text:'Hi Aurora — we move a lot of finished apparel out of Iberia and your technical fabrics line caught our eye. Do you ship FCA Porto or would you want us to arrange pickup?', time:'09:04' },
+        { from:'them', text:'Hello Meridian, thanks for the intro. We can do either, but FCA Porto is cleaner for us. Typical order is 6–12 pallets. What lanes do you run from here?', time:'09:06' },
+        { from:'me', text:'We run weekly sea from Leixões and a twice-weekly road groupage. For 6–12 pallets road groupage is usually 3 days door-to-door to Rotterdam.', time:'09:08' },
+        { from:'them', text:'Sounds great — can you share lead times for the technical jersey?', time:'09:11' },
+      ],
+      s2:[
+        { from:'ai', text:'NexusB2B introduction — Stonebridge Capital (London, Finance) opened a session with Meridian Logistics. Stonebridge provides trade finance and working-capital facilities and believes it can support Meridian\u2019s growing Iberia lanes.', time:'Yesterday' },
+        { from:'them', text:'Our trade-finance desk can cover the Porto shipment. Terms attached in a receipt — 60-day facility at 4.2%.', time:'08:40' },
+      ],
+      s5:[
+        { from:'ai', text:'NexusB2B introduction — Northwind Foods opened a session with Meridian Logistics regarding cold-chain groupage for cocoa shipments.', time:'10 Jun' },
+        { from:'them', text:'Deal closed. Receipt acknowledged. Thanks for the smooth handover.', time:'10 Jun' },
+      ],
+    };
+  }
+  seedReceipts(){
+    return [
+      { id:'r1', sessionId:'s1', fromId:'me', toId:'b1', createdBy:'t1', amount:48500, currency:'EUR', desc:'Q3 freight contract — weekly road groupage Porto → Rotterdam, est. 9 shipments', status:'acknowledged', date:'12 Jun 2026', ref:'NX-2026-0418' },
+      { id:'r2', sessionId:'s2', fromId:'b3', toId:'me', createdBy:null, amount:12000, currency:'EUR', desc:'Trade-finance advisory retainer — 60-day working-capital facility setup', status:'pending', date:'15 Jun 2026', ref:'NX-2026-0501' },
+      { id:'r3', sessionId:'s5', fromId:'me', toId:'b4', createdBy:'t3', amount:6750, currency:'EUR', desc:'Cold-chain groupage — cocoa, 4 pallets Lyon → Rotterdam', status:'acknowledged', date:'09 Jun 2026', ref:'NX-2026-0377' },
+    ];
+  }
+  seedTeam(){
+    return [
+      { id:'t1', name:'Elena Voss', email:'admin@meridian.io', role:'business_admin', status:'active', initials:'EV', msgBase:42, lastActive:'2m ago' },
+      { id:'t2', name:'Marc Dubois', email:'marc@meridian.io', role:'business_agent', status:'active', initials:'MD', msgBase:23, lastActive:'3h ago' },
+      { id:'t3', name:'Priya Nair', email:'priya@meridian.io', role:'business_agent', status:'active', initials:'PN', msgBase:11, lastActive:'1d ago' },
+      { id:'t4', name:'Tom Bakker', email:'tom@meridian.io', role:'business_agent', status:'deactivated', initials:'TB', msgBase:4, lastActive:'3w ago' },
+    ];
+  }
+
+  bizById(id){ return this.businesses.find(b=>b.id===id); }
+  money(n,c){ const s=(c==='EUR'?'\u20ac':c==='USD'?'$':c+' ')+Number(n).toLocaleString('en-US'); return s; }
+
+  bankInfo = {
+    me:{ holder:'Meridian Logistics B.V.', bank:'ING Bank N.V.', iban:'NL91 INGB 0002 4455 88', swift:'INGBNL2A' },
+    b1:{ holder:'Aurora Textiles Lda.', bank:'Banco BPI', iban:'PT50 0010 0000 4455 6677 88', swift:'BBPIPTPL' },
+    b3:{ holder:'Stonebridge Capital Ltd.', bank:'Barclays Bank PLC', iban:'GB29 BARC 2000 0055 7788 99', swift:'BARCGB22' },
+    b4:{ holder:'Northwind Foods SAS', bank:'BNP Paribas', iban:'FR76 3000 4000 0312 3456 7890 143', swift:'BNPAFRPP' },
+  };
+  bankFor(id){ return this.bankInfo[id] || { holder:this.bizById(id).name, bank:'On file', iban:'•••• •••• •••• ••••', swift:'••••••••' }; }
+
+  startSession = (bizId)=>{
+    this.ensureSeed();
+    const sessions=this.state.sessions||this.seedSessions();
+    let existing=sessions.find(s=>s.withId===bizId);
+    const b=this.bizById(bizId);
+    if(existing){ this.setState({ activeSessionId:existing.id, route:'session' }); window.scrollTo(0,0); return; }
+    const id='s'+Date.now();
+    const ns={ id, withId:bizId, status:'active', initiatedByMe:true, time:'now', preview:'AI introduction sent — the floor is yours.' };
+    const msgs={...(this.state.messages||this.seedMessages())};
+    msgs[id]=[{ from:'ai', text:'NexusB2B introduction — Meridian Logistics (Rotterdam, Freight & Logistics) is reaching out to '+b.name+' ('+b.city+', '+b.industry+'). '+b.desc+' Meridian is exploring a partnership. The floor is yours.', time:'now' }];
+    this.setState({ sessions:[ns,...sessions], messages:msgs, activeSessionId:id, route:'session' });
+    window.scrollTo(0,0);
+  };
+  onComposerKey = (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); this.sendMsg(); } };
+
+  askLummy = ()=>{
+    const sid=this.state.activeSessionId;
+    const msgs={...(this.state.messages||this.seedMessages())};
+    const arr=[...(msgs[sid]||[])];
+    const now=new Date(); const t=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+    const sess=(this.state.sessions||[]).find(s=>s.id===sid);
+    const other=sess&&this.bizById(sess.withId);
+    arr.push({ from:'lummy', text:this.lummyAnswer(other), time:t });
+    msgs[sid]=arr;
+    this.setState({ messages:msgs });
+  };
+  lummyAnswer(b){
+    const lib={
+      'Manufacturing':'Indicative market reference — finished knitwear out of Porto runs ~€180–240 per pallet by road groupage to Rotterdam; sea LCL via Leixões ~€45/m³ this quarter.',
+      'Freight & Logistics':'Indicative market reference — EU road groupage is averaging ~€0.95–1.30 per km per pallet this quarter.',
+      'Finance':'Indicative market reference — 60-day trade-finance facilities for mid-market importers are pricing around 3.8–4.6% APR.',
+      'Food & Beverage':'Indicative market reference — temperature-controlled groupage (2–8°C) carries roughly a 25–35% premium over ambient.',
+      'Pharmaceuticals':'Indicative market reference — GDP cold-chain validation runs typically €4k–8k per lane; recurring 2–8°C shipments price 30–40% above ambient.',
+      'SaaS / IT':'Indicative market reference — managed Kubernetes in the EU is benchmarking around €0.09–0.14 per vCPU-hour on committed annual terms.',
+      'Packaging':'Indicative market reference — compostable fibre packaging is currently 15–25% above conventional, narrowing with volume.',
+      'Metals':'Indicative market reference — cold-rolled coil is benchmarking around €720–780 per tonne ex-works this quarter.',
+      'Marketing':'Indicative market reference — B2B demand-gen retainers in the EU sit around €6k–12k per month for an industrial scope.',
+    };
+    const base=(b&&lib[b.industry])||'Indicative market reference — benchmarks vary by lane and volume; I can only surface public reference figures.';
+    return base+' These are public benchmarks only — I answer scoped questions like this and never read your private conversation.';
+  }
+
+  downloadReceipt = ()=>{
+    const r=(this.state.receipts||this.seedReceipts()).find(x=>x.id===this.state.activeReceiptId);
+    if(!r) return;
+    const from=this.bizById(r.fromId), to=this.bizById(r.toId), bank=this.bankFor(r.fromId);
+    const txt=[
+      'NEXUSB2B — RECEIPT','='.repeat(40),
+      'Reference : '+r.ref,
+      'Issued    : '+r.date,
+      'Status    : '+r.status.toUpperCase(),
+      '',
+      'FROM : '+from.name+'  ('+from.industry+', '+from.city+')',
+      'TO   : '+to.name+'  ('+to.industry+', '+to.city+')',
+      '',
+      'DESCRIPTION','-'.repeat(40), r.desc,
+      '',
+      'AMOUNT : '+this.money(r.amount,r.currency),
+      '',
+      'PAYMENT DETAILS (sender)','-'.repeat(40),
+      'Account holder : '+bank.holder,
+      'Bank           : '+bank.bank,
+      'IBAN           : '+bank.iban,
+      'SWIFT / BIC    : '+bank.swift,
+      '',
+      'Linked to session : '+r.sessionId,
+      '','Generated by NexusB2B · demo build',
+    ].join('\n');
+    try{
+      const blob=new Blob([txt],{type:'text/plain'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=r.ref+'.txt';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+    }catch(e){}
+  };
+
+  // ---------- theme ----------
+  componentDidMount(){ try{ const t=localStorage.getItem('nx-theme'); if(t==='light'||t==='dark'){ if(t!==this.state.theme) this.setState({theme:t}); } }catch(e){} this.applyTheme(); }
+  componentDidUpdate(){ this.applyTheme(); }
+  applyTheme(){ if(typeof document!=='undefined'){ document.documentElement.setAttribute('data-theme', this.state.theme); } }
+  toggleTheme = ()=>{ this.setState(s=>{ const t=s.theme==='dark'?'light':'dark'; try{ localStorage.setItem('nx-theme', t); }catch(e){} return { theme:t }; }); };
+  dismissIntro = ()=>this.setState({ showIntro:false });
+
+  // ---------- nav ----------
+  nav = (r)=>{ this.setState({ route:r }); if(typeof window!=='undefined') window.scrollTo(0,0); };
+  go(r){ return ()=>this.nav(r); }
+
+  ensureSeed(){
+    if(this.state.sessions===null){
+      this.setState({ sessions:this.seedSessions(), messages:this.seedMessages(), receipts:this.seedReceipts(), team:this.seedTeam() });
+    }
+  }
+  enterApp = ()=>{ this.ensureSeed(); this.nav('dashboard'); };
+
+  openSession = (id)=>{ this.setState({ activeSessionId:id, route:'session' }); if(typeof window!=='undefined') window.scrollTo(0,0); };
+  openReceipt = (id)=>{ this.setState({ activeReceiptId:id, route:'receipt' }); if(typeof window!=='undefined') window.scrollTo(0,0); };
+
+  onTopSearch = (e)=>this.setState({ topSearch:e.target.value });
+  setDiscIndustry = (i)=>this.setState({ discIndustry:i });
+  onDraft = (e)=>this.setState({ draft:e.target.value });
+
+  sendMsg = ()=>{
+    const d=(this.state.draft||'').trim(); if(!d) return;
+    const sid=this.state.activeSessionId;
+    const msgs={...(this.state.messages||{})};
+    const arr=[...(msgs[sid]||[])];
+    const now=new Date(); const t=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+    arr.push({ from:'me', text:d, time:t });
+    msgs[sid]=arr;
+    const sess0=(this.state.sessions||[]).find(s=>s.id===sid);
+    const actor=(sess0&&sess0.assignedTo)||'t1';
+    const bump={...(this.state.msgBump||{})}; bump[actor]=(bump[actor]||0)+1;
+    this.setState({ messages:msgs, draft:'', msgBump:bump });
+    const sess=(this.state.sessions||[]).find(s=>s.id===sid);
+    const other=sess&&this.bizById(sess.withId);
+    if(other&&other.demo){
+      setTimeout(()=>{
+        const m2={...(this.state.messages||{})};
+        const a2=[...(m2[sid]||[])];
+        const now2=new Date(); const t2=now2.getHours().toString().padStart(2,'0')+':'+now2.getMinutes().toString().padStart(2,'0');
+        a2.push({ from:'them', text:this.demoReply(other,d), time:t2, demo:true });
+        m2[sid]=a2;
+        this.setState({ messages:m2 });
+      }, 1400);
+    }
+  };
+  demoReply(b,prompt){
+    const lib={
+      b1:'Lead time on the technical jersey is 3 weeks for the first run, 10 days on repeats. We\u2019d palletise to your ISPM-15 spec and hand over FCA Porto. Shall I draft a receipt for the recurring lane so we can lock pricing?',
+      b2:'Happy to scope that. For Meridian\u2019s tracking workloads we\u2019d run managed Kubernetes in eu-central with 99.95% SLA. I can put indicative pricing into a receipt — want monthly or committed-annual?',
+      b5:'We can support cold-chain at 2\u20138\u00b0C with full GDP documentation. Validation runs take two weeks. I\u2019ll prepare a receipt covering the qualification batch and recurring lanes.',
+      b8:'Love it. We\u2019d start with a positioning sprint and a lane-specific demand campaign. Sending over a receipt with the engagement scope and first-month retainer.',
+    };
+    return lib[b.id] || ('Understood — that works on our side. I\u2019ll put the specifics into a receipt so we both have it on record. Anything else you need before we proceed?');
+  }
+
+  toggleReceipt = ()=>this.setState({ showReceipt:!this.state.showReceipt, rcAmount:'', rcDesc:'' });
+  onRcAmount=(e)=>this.setState({ rcAmount:e.target.value });
+  onRcDesc=(e)=>this.setState({ rcDesc:e.target.value });
+  createReceipt = ()=>{
+    const amt=parseFloat(this.state.rcAmount); if(!amt||!this.state.rcDesc.trim()) return;
+    const sid=this.state.activeSessionId;
+    const sess=(this.state.sessions||[]).find(s=>s.id===sid);
+    const actor=(sess&&sess.assignedTo)||'t1';
+    const rec={ id:'r'+Date.now(), sessionId:sid, fromId:'me', toId:sess.withId, createdBy:actor, amount:amt, currency:'EUR', desc:this.state.rcDesc.trim(), status:'pending', date:'16 Jun 2026', ref:'NX-2026-0'+Math.floor(500+Math.random()*99) };
+    this.setState({ receipts:[rec,...(this.state.receipts||[])], showReceipt:false, rcAmount:'', rcDesc:'' });
+  };
+  ackReceipt = (id)=>{
+    const rs=(this.state.receipts||[]).map(r=>r.id===id?{...r,status:'acknowledged'}:r);
+    this.setState({ receipts:rs });
+  };
+  toggleMember = (id)=>{
+    const tm=(this.state.team||this.seedTeam()).map(m=>m.id===id?{...m,status:m.status==='active'?'deactivated':'active'}:m);
+    this.setState({ team:tm });
+  };
+
+  // ---------- derived ----------
+  renderVals(){
+    const route=this.state.route;
+    const appScreens=['dashboard','discovery','sessions','session','receipts','receipt','team','account','business'];
+    const inApp=appScreens.includes(route);
+    const me=this.bizById('me');
+    const sessions=this.state.sessions||this.seedSessions();
+    const messages=this.state.messages||this.seedMessages();
+    const receipts=this.state.receipts||this.seedReceipts();
+    const team=this.state.team||this.seedTeam();
+
+    // landing preview
+    const landingPreview=this.businesses.filter(b=>b.id!=='me').slice(0,4);
+
+    // nav
+    const def=(key,label,glyph,r,badge)=>{
+      const on=route===r || (key==='sessions'&&route==='session') || (key==='receipts'&&route==='receipt') || (key==='settings'&&(route==='account'||route==='business'));
+      return { label, glyph, badge:badge||'', go:this.go(r), ink:on?'var(--fg-strong)':'var(--muted)', edge:on?'#c44b1b':'transparent', bg:on?'rgba(196,75,27,0.06)':'transparent' };
+    };
+    const pendingCount=sessions.filter(s=>s.status==='pending').length;
+    const unack=receipts.filter(r=>r.toId==='me'&&r.status==='pending').length;
+    const navItems=[
+      def('dashboard','Dashboard','▦','dashboard'),
+      def('discovery','Discovery','⌕','discovery'),
+      def('sessions','Sessions','◇','sessions', pendingCount?String(pendingCount):''),
+      def('receipts','Receipts','▤','receipts', unack?String(unack):''),
+      def('team','Team','◎','team'),
+      def('account','Settings','⚙','account'),
+    ];
+
+    // crumb
+    const crumbMap={ dashboard:'Dashboard', discovery:'Discovery', sessions:'Sessions', session:'Sessions / Live', receipts:'Receipts', receipt:'Receipts / Detail', team:'Team', account:'Settings / Account', business:'Settings / Business' };
+    const crumb=crumbMap[route]||'';
+
+    // dashboard
+    const activeCount=sessions.filter(s=>s.status==='active').length;
+    const dashStats=[
+      { label:'Active sessions', value:String(activeCount), color:'var(--fg-strong)', note:'2 awaiting your reply' },
+      { label:'Pending requests', value:String(pendingCount), color:'#c44b1b', note:'sent, awaiting accept' },
+      { label:'Receipts', value:String(receipts.length), color:'var(--fg-strong)', note:unack? unack+' to acknowledge':'all settled' },
+      { label:'Network reach', value:'2.4k', color:'var(--fg-strong)', note:'verified firms · 38 countries' },
+    ];
+    const tag=(status)=>{
+      if(status==='active') return { tag:'Active', tagColor:'#5a9a7a', tagBorder:'#274a3a' };
+      if(status==='pending') return { tag:'Pending', tagColor:'#c8a240', tagBorder:'#4a4020' };
+      return { tag:'Closed', tagColor:'var(--muted)', tagBorder:'var(--strong)' };
+    };
+    const activityFeed=sessions.slice(0,5).map(s=>{ const b=this.bizById(s.withId); const tg=tag(s.status); return { initials:b.initials, title:b.name, meta:b.industry+' · '+b.city, time:s.time, go:()=>this.openSession(s.id), ...tg }; });
+
+    // discovery
+    const q=(this.state.topSearch||'').toLowerCase().trim();
+    const di=this.state.discIndustry;
+    const industryChips=this.industries.map(i=>{ const on=di===i; return { label:i, go:()=>this.setDiscIndustry(i), ink:on?'#0a0a0a':'var(--fg)', bg:on?'#c44b1b':'transparent', border:on?'#c44b1b':'var(--strong)' }; });
+    let fb=this.businesses.filter(b=>b.id!=='me');
+    if(di!=='All') fb=fb.filter(b=>b.industry===di);
+    if(q) fb=fb.filter(b=>(b.name+' '+b.industry+' '+b.city+' '+b.country+' '+b.desc).toLowerCase().includes(q));
+    const filteredBusinesses=fb.map(b=>({ ...b, start:()=>this.startSession(b.id) }));
+
+    // sessions groups
+    const grp=(kind,title,dot,status)=>{ const items=sessions.filter(s=>s.status===status).map(s=>{ const b=this.bizById(s.withId); const tg=tag(s.status); return { initials:b.initials, name:b.name, industry:b.industry, preview:s.preview, demo:b.demo, time:s.time, open:()=>this.openSession(s.id), tag:tg.tag, tagColor:tg.tagColor, tagBorder:tg.tagBorder }; }); return { kind, title, dot, count:items.length, items, empty:items.length===0 }; };
+    const sessionGroups=[ grp('active','Active','#5a9a7a','active'), grp('pending','Pending','#c8a240','pending'), grp('closed','Closed','var(--subtle)','closed') ];
+
+    // session detail
+    const sx=sessions.find(s=>s.id===this.state.activeSessionId)||sessions[0];
+    const sxB=this.bizById(sx.withId);
+    const chat=(messages[sx.id]||[]).map(m=>({ text:m.text, time:m.time, isAi:m.from==='ai', isMe:m.from==='me', isThem:m.from==='them', isLummy:m.from==='lummy', demo:!!m.demo }));
+    const statusColorMap={ active:'#5a9a7a', pending:'#c8a240', closed:'var(--muted)' };
+    const sxReceiptsArr=receipts.filter(r=>r.sessionId===sx.id);
+    const sxReceipts=sxReceiptsArr.map(r=>({ ref:r.ref, amount:this.money(r.amount,r.currency), desc:r.desc, statusLabel:r.status, statusColor:r.status==='acknowledged'?'#5a9a7a':'#c8a240', open:()=>this.openReceipt(r.id) }));
+
+    // receipts list
+    const receiptRows=receipts.map(r=>{ const cp=this.bizById(r.fromId==='me'?r.toId:r.fromId); return { ref:r.ref, counterparty:cp.name, desc:r.desc, amount:this.money(r.amount,r.currency), direction:r.fromId==='me'?'Sent':'Received', dirColor:r.fromId==='me'?'var(--muted)':'#5a9a7a', statusLabel:r.status, statusColor:r.status==='acknowledged'?'#5a9a7a':'#c8a240', statusBorder:r.status==='acknowledged'?'#274a3a':'#4a4020', open:()=>this.openReceipt(r.id) }; });
+
+    // receipt detail
+    const rx=receipts.find(r=>r.id===this.state.activeReceiptId)||receipts[0];
+    const rxFrom=this.bizById(rx.fromId); const rxTo=this.bizById(rx.toId); const rxBank=this.bankFor(rx.fromId);
+    const rxSess=sessions.find(s=>s.id===rx.sessionId);
+
+    // team
+    const roleLabelMap={ business_admin:'Business Admin', business_agent:'Business Agent', platform_admin:'Platform Admin' };
+    const bump=this.state.msgBump||{};
+    const teamRows=team.map(m=>{
+      const act=m.status==='active';
+      const mySessions=sessions.filter(s=>s.assignedTo===m.id);
+      const talkedTo=mySessions.map(s=>{ const b=this.bizById(s.withId); return { initials:b.initials, name:b.name, demo:b.demo }; });
+      const msgs=(m.msgBase||0)+(bump[m.id]||0);
+      const recCount=receipts.filter(r=>r.createdBy===m.id).length;
+      return { initials:m.initials, name:m.name, email:m.email, ink:act?'var(--fg-strong)':'var(--subtle2)',
+        roleLabel:roleLabelMap[m.role], roleColor:m.role==='business_admin'?'#c44b1b':'var(--muted)',
+        statusLabel:act?'Active':'Deactivated', statusColor:act?'#5a9a7a':'var(--muted)', statusBorder:act?'#274a3a':'var(--strong)',
+        action:act?'Deactivate':'Reactivate', actionColor:act?'var(--muted)':'#c44b1b', toggle:()=>this.toggleMember(m.id),
+        sessionsCount:String(mySessions.length), messages:String(msgs), receipts:String(recCount),
+        lastActive:m.lastActive, talkedTo, noTalk:talkedTo.length===0, isAdmin:m.role==='business_admin' };
+    });
+    const teamTotals={
+      members:String(team.filter(t=>t.status==='active').length),
+      sessions:String(sessions.length),
+      messages:String(team.reduce((n,m)=>n+(m.msgBase||0),0)+Object.values(bump).reduce((a,b)=>a+b,0)),
+      receipts:String(receipts.length),
+    };
+
+    // settings
+    const inSettings=route==='account'||route==='business';
+
+    return {
+      industryChips, filteredBusinesses, discCount:filteredBusinesses.length,
+      sessionGroups,
+      sxInitials:sxB.initials, sxName:sxB.name, sxIndustry:sxB.industry, sxCity:sxB.city, sxDemo:sxB.demo,
+      sxStatus:sx.status, sxStatusColor:statusColorMap[sx.status], sxOpenedBy:sx.initiatedByMe?'You · Meridian Logistics':sxB.name,
+      chat, sxReceipts, sxNoReceipts:sxReceipts.length===0,
+      draft:this.state.draft, onDraft:this.onDraft, sendMsg:this.sendMsg, onComposerKey:this.onComposerKey, askLummy:this.askLummy,
+      toggleReceipt:this.toggleReceipt, showReceipt:this.state.showReceipt, rcAmount:this.state.rcAmount, rcDesc:this.state.rcDesc, onRcAmount:this.onRcAmount, onRcDesc:this.onRcDesc, createReceipt:this.createReceipt,
+      receiptRows,
+      rxRef:rx.ref, rxAmount:this.money(rx.amount,rx.currency), rxStatusLabel:rx.status, rxStatusColor:rx.status==='acknowledged'?'#5a9a7a':'#c8a240', rxStatusBorder:rx.status==='acknowledged'?'#274a3a':'#4a4020',
+      rxFromName:rxFrom.name, rxFromMeta:rxFrom.industry+' · '+rxFrom.city, rxToName:rxTo.name, rxToMeta:rxTo.industry+' · '+rxTo.city,
+      rxDesc:rx.desc, rxBankHolder:rxBank.holder, rxBankName:rxBank.bank, rxBankIban:rxBank.iban, rxBankSwift:rxBank.swift,
+      rxDate:rx.date, rxSession:rxSess?rxSess.id:rx.sessionId, rxCanAck:(rx.toId==='me'&&rx.status==='pending'), rxAcked:rx.status==='acknowledged', rxAck:()=>this.ackReceipt(rx.id), rxDownload:this.downloadReceipt,
+      goReceipts:this.go('receipts'),
+      teamRows, teamTotals,
+      inSettings, isAccount:route==='account', isBusiness:route==='business', goAccount:this.go('account'), goBusiness:this.go('business'),
+      tabAccountInk:route==='account'?'var(--fg-strong)':'var(--muted)', tabAccountEdge:route==='account'?'#c44b1b':'transparent',
+      tabBusinessInk:route==='business'?'var(--fg-strong)':'var(--muted)', tabBusinessEdge:route==='business'?'#c44b1b':'transparent',
+      route,
+      isLanding: route==='landing', isLogin: route==='login', isRegister: route==='register', inApp,
+      isDashboard: route==='dashboard', isDiscovery: route==='discovery', isSessions: route==='sessions',
+      isSession: route==='session', isReceipts: route==='receipts', isReceipt: route==='receipt',
+      isTeam: route==='team', isAccount: route==='account', isBusiness: route==='business',
+      goLanding:this.go('landing'), goLogin:this.go('login'), goRegister:this.go('register'),
+      goDemo:this.enterApp, goDiscovery:this.go('discovery'), goSessions:this.go('sessions'),
+      theme:this.state.theme, toggleTheme:this.toggleTheme, themeLabel:this.state.theme==='dark'?'Light':'Dark', themeGlyph:this.state.theme==='dark'?'☀':'☾',
+      showIntro:this.state.showIntro, dismissIntro:this.dismissIntro,
+      landingPreview, navItems, crumb, me,
+      topSearch:this.state.topSearch, onTopSearch:this.onTopSearch,
+      dashStats, activityFeed,
+    };
+  }
+}
+</script>
+</body>
+</html>

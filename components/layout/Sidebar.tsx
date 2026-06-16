@@ -2,70 +2,169 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  Search,
-  MessageSquare,
-  Users,
-  FileText,
-  Settings,
-  LogOut,
-  Briefcase,
-} from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
-import { cn } from '@/lib/utils'
+import { useSession } from 'next-auth/react'
+
+function NxLogo() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ width: 22, height: 22, position: 'relative', flexShrink: 0 }}>
+        <div style={{ position: 'absolute', width: 7, height: 7, background: '#c44b1b', top: 0, left: 0 }} />
+        <div style={{ position: 'absolute', width: 7, height: 7, border: '1px solid #c44b1b', top: 0, right: 0 }} />
+        <div style={{ position: 'absolute', width: 7, height: 7, border: '1px solid #c44b1b', bottom: 0, left: 0 }} />
+        <div style={{ position: 'absolute', width: 7, height: 7, background: '#c44b1b', bottom: 0, right: 0 }} />
+        <div style={{ position: 'absolute', width: 1, height: 15, background: 'var(--nx-faint)', left: '50%', top: 3 }} />
+        <div style={{ position: 'absolute', height: 1, width: 15, background: 'var(--nx-faint)', top: '50%', left: 3 }} />
+      </div>
+      <span style={{ fontFamily: 'var(--font-display)', fontSize: 19, letterSpacing: '0.18em', color: 'var(--nx-fg-strong)' }}>
+        NEXUS<span style={{ color: '#c44b1b' }}>B2B</span>
+      </span>
+    </div>
+  )
+}
 
 const NAV_ITEMS = [
-  { href: '/discovery', label: 'Discovery', icon: Search },
-  { href: '/sessions', label: 'Sessions', icon: MessageSquare },
-  { href: '/team', label: 'Team', icon: Users },
-  { href: '/receipts', label: 'Receipts', icon: FileText },
-  { href: '/settings/business', label: 'Settings', icon: Settings },
+  { href: '/dashboard', label: 'Dashboard', glyph: '▦', key: 'dashboard' },
+  { href: '/discovery', label: 'Discovery', glyph: '⌕', key: 'discovery' },
+  { href: '/sessions', label: 'Sessions', glyph: '◇', key: 'sessions' },
+  { href: '/receipts', label: 'Receipts', glyph: '▤', key: 'receipts' },
+  { href: '/team', label: 'Team', glyph: '◎', key: 'team' },
+  { href: '/settings/account', label: 'Settings', glyph: '⚙', key: 'settings' },
 ]
+
+function getInitials(name: string) {
+  return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+}
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { data: session } = useSession()
+  const [theme, setTheme] = useState('dark')
+  const [pendingCount, setPendingCount] = useState(0)
+  const [unackCount, setUnackCount] = useState(0)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('nx-theme') || 'dark'
+    setTheme(saved)
+    document.documentElement.setAttribute('data-theme', saved)
+  }, [])
+
+  // Poll for pending badge counts
+  useEffect(() => {
+    async function fetchCounts() {
+      try {
+        const res = await fetch('/api/sessions/counts')
+        if (res.ok) {
+          const json = await res.json()
+          setPendingCount(json.pending ?? 0)
+          setUnackCount(json.unacknowledged ?? 0)
+        }
+      } catch {
+        // silently ignore
+      }
+    }
+    fetchCounts()
+    const iv = setInterval(fetchCounts, 30000)
+    return () => clearInterval(iv)
+  }, [])
+
+  function toggleTheme() {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    localStorage.setItem('nx-theme', next)
+    document.documentElement.setAttribute('data-theme', next)
+  }
+
+  const themeGlyph = theme === 'dark' ? '☀' : '☾'
+  const themeLabel = theme === 'dark' ? 'Light' : 'Dark'
+
+  const userName = session?.user?.name ?? 'User'
+  const userRole = (session?.user as { role?: string })?.role ?? 'business_agent'
+  const roleLabel = userRole === 'business_admin' ? 'Business Admin' : userRole === 'platform_admin' ? 'Platform Admin' : 'Business Agent'
+
+  const badges: Record<string, number> = {
+    sessions: pendingCount,
+    receipts: unackCount,
+  }
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 min-h-screen border-r border-border bg-background">
-      {/* Logo */}
-      <div className="flex items-center gap-2 px-6 py-5 border-b border-border">
-        <div className="w-8 h-8 rounded-md bg-surface flex items-center justify-center">
-          <Briefcase className="w-4 h-4 text-white" />
-        </div>
-        <span className="font-display text-lg font-bold text-foreground">NexusB2B</span>
-      </div>
+    <aside
+      className="nx-sidebar"
+      style={{
+        width: 248,
+        background: 'var(--nx-bg)',
+        borderRight: '1px solid var(--nx-border)',
+        flexDirection: 'column',
+        flexShrink: 0,
+        position: 'sticky',
+        top: 0,
+        height: '100vh',
+      }}
+    >
+      {/* Logo header */}
+      <Link href="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', height: 64, padding: '0 24px', borderBottom: '1px solid var(--nx-border)' }}>
+        <NxLogo />
+      </Link>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const active = pathname.startsWith(href)
+      {/* Nav */}
+      <div style={{ flex: 1, padding: '20px 0', overflowY: 'auto' }}>
+        {NAV_ITEMS.map(({ href, label, glyph, key }) => {
+          const active = pathname === href || (key === 'sessions' && pathname.startsWith('/sessions')) || (key === 'receipts' && pathname.startsWith('/receipts')) || (key === 'settings' && pathname.startsWith('/settings'))
+          const badge = badges[key] ?? 0
           return (
             <Link
               key={href}
               href={href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
-                active
-                  ? 'bg-brand-brown text-white'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-              )}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '11px 24px',
+                textDecoration: 'none',
+                borderLeft: `2px solid ${active ? '#c44b1b' : 'transparent'}`,
+                background: active ? 'rgba(196,75,27,0.06)' : 'none',
+                color: active ? 'var(--nx-fg-strong)' : 'var(--nx-muted)',
+              }}
             >
-              <Icon className="w-4 h-4 shrink-0" aria-hidden />
-              {label}
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, width: 16, color: active ? 'var(--nx-fg-strong)' : 'var(--nx-muted)', flexShrink: 0 }}>{glyph}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', flex: 1 }}>{label}</span>
+              {badge > 0 && (
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#c44b1b', background: 'rgba(196,75,27,0.12)', padding: '2px 6px' }}>{badge}</span>
+              )}
             </Link>
           )
         })}
-      </nav>
+      </div>
 
-      {/* Sign out */}
-      <div className="px-3 py-4 border-t border-border">
+      {/* Bottom: appearance + user */}
+      <div style={{ borderTop: '1px solid var(--nx-border)', padding: '14px 24px 16px' }}>
+        {/* Appearance toggle */}
         <button
-          onClick={() => signOut({ callbackUrl: '/auth/login' })}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+          onClick={toggleTheme}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', border: '1px solid var(--nx-border)', padding: '9px 12px', marginBottom: 14, cursor: 'pointer', background: 'none' }}
         >
-          <LogOut className="w-4 h-4 shrink-0" aria-hidden />
-          Sign Out
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)' }}>Appearance</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#c44b1b' }}>{themeGlyph} {themeLabel}</span>
         </button>
+
+        {/* User row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, border: '1px solid var(--nx-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 15, color: 'var(--nx-fg-strong)', flexShrink: 0 }}>
+            {getInitials(userName)}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-fg-strong)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{userName}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c44b1b' }}>{roleLabel}</div>
+          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: '/auth/login' })}
+            title="Sign out"
+            style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-subtle)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }}
+          >
+            ⏻
+          </button>
+        </div>
       </div>
     </aside>
   )

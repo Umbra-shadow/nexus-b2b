@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/session'
 import { query, queryOne } from '@/lib/db/aurora'
 
-interface Params { params: { id: string } }
+interface Params { params: Promise<{ id: string }> }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await auth()
@@ -11,10 +11,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Admins only' }, { status: 403 })
   }
 
+  const { id } = await params
+
   // Ensure target member belongs to same business
   const member = await queryOne<{ id: string; business_id: string }>(
     `SELECT id, business_id FROM users WHERE id = $1`,
-    [params.id]
+    [id]
   )
 
   if (!member || member.business_id !== session.user.businessId) {
@@ -26,7 +28,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   }
 
   const { isActive } = await req.json()
-  await query(`UPDATE users SET is_active = $1 WHERE id = $2`, [Boolean(isActive), params.id])
+  await query(`UPDATE users SET is_active = $1 WHERE id = $2`, [Boolean(isActive), id])
 
   return NextResponse.json({ success: true })
 }

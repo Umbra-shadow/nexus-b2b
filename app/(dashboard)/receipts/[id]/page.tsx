@@ -3,11 +3,9 @@ import { queryOne } from '@/lib/db/aurora'
 import { notFound, redirect } from 'next/navigation'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { decrypt } from '@/lib/crypto/encrypt'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { ArrowLeft, FileText } from 'lucide-react'
 
-interface Props { params: { id: string } }
+interface Props { params: Promise<{ id: string }> }
 
 interface ReceiptRow {
   id: string
@@ -30,7 +28,14 @@ interface ReceiptRow {
   bank_swift: string | null
 }
 
+const STATUS_STYLE: Record<string, { text: string; border: string }> = {
+  draft: { text: 'var(--nx-muted)', border: 'var(--nx-border)' },
+  sent: { text: '#c44b1b', border: '#7a2a0c' },
+  acknowledged: { text: '#5a9a7a', border: '#2a5a3a' },
+}
+
 export default async function ReceiptPage({ params }: Props) {
+  const { id } = await params
   const session = await auth()
   if (!session?.user) redirect('/auth/login')
 
@@ -43,7 +48,7 @@ export default async function ReceiptPage({ params }: Props) {
      JOIN businesses ib ON ib.id = r.issuer_business_id
      JOIN businesses rb ON rb.id = r.receiver_business_id
      WHERE r.id = $1`,
-    [params.id]
+    [id]
   )
 
   if (!receipt) notFound()
@@ -54,7 +59,8 @@ export default async function ReceiptPage({ params }: Props) {
   }
 
   const isReceiver = receipt.receiver_id === uid
-  const items = JSON.parse(receipt.items)
+  const items: { description: string; qty: number; unitPrice: number; total: number }[] = JSON.parse(receipt.items)
+  const sc = STATUS_STYLE[receipt.status] ?? STATUS_STYLE.draft
 
   const bankDetails = isReceiver && receipt.bank_account_number
     ? {
@@ -66,118 +72,136 @@ export default async function ReceiptPage({ params }: Props) {
     : null
 
   return (
-    <div className="container-app py-8 max-w-3xl space-y-6">
-      <Link href="/receipts" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="w-4 h-4" /> Back to Receipts
+    <div style={{ padding: '28px 20px', maxWidth: 800, animation: 'nx-rise 0.4s ease' }}>
+      {/* Back */}
+      <Link href="/receipts" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-muted)', textDecoration: 'none', marginBottom: 28 }}>
+        ← Back to Receipts
       </Link>
 
-      <div className="card-base space-y-8">
+      <div style={{ border: '1px solid var(--nx-border)' }}>
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap border-b border-border pb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-brand-brown/10 flex items-center justify-center">
-              <FileText className="w-5 h-5 text-brand-brown" />
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '24px 28px', borderBottom: '1px solid var(--nx-border)', flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 6 }}>Receipt #{receipt.id.slice(0, 8).toUpperCase()}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 44, lineHeight: 0.9, color: 'var(--nx-fg-strong)', marginBottom: 6 }}>
+              {formatCurrency(Number(receipt.total), receipt.currency)}
             </div>
-            <div>
-              <p className="font-mono text-xs text-muted-foreground">RECEIPT #{receipt.id.slice(0, 8).toUpperCase()}</p>
-              <p className="text-sm text-muted-foreground">{formatDate(receipt.created_at)}</p>
-            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--nx-muted)', letterSpacing: '0.06em' }}>{formatDate(receipt.created_at)}</div>
           </div>
-          <span className={`text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full ${
-            receipt.status === 'acknowledged' ? 'bg-green-100 text-green-700' :
-            receipt.status === 'sent' ? 'bg-brand-brown/10 text-brand-brown' :
-            'bg-secondary text-muted-foreground'
-          }`}>{receipt.status}</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: sc.text, border: `1px solid ${sc.border}`, padding: '6px 14px' }}>
+            {receipt.status}
+          </span>
         </div>
 
-        {/* Parties */}
-        <div className="grid sm:grid-cols-2 gap-6">
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">From</p>
-            <p className="font-semibold text-foreground">{receipt.issuer_name}</p>
+        {/* From / To */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid var(--nx-border)' }}>
+          <div style={{ padding: '20px 28px', borderRight: '1px solid var(--nx-border)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 8 }}>From</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--nx-fg-strong)' }}>{receipt.issuer_name}</div>
           </div>
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">To</p>
-            <p className="font-semibold text-foreground">{receipt.receiver_name}</p>
+          <div style={{ padding: '20px 28px' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 8 }}>To</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--nx-fg-strong)' }}>{receipt.receiver_name}</div>
           </div>
         </div>
 
         {/* Line items */}
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Items</p>
-          <div className="border border-border rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-secondary border-b border-border">
-                <tr>
-                  <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Description</th>
-                  <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Qty</th>
-                  <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Unit Price</th>
-                  <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {items.map((item: { description: string; qty: number; unitPrice: number; total: number }, i: number) => (
-                  <tr key={i}>
-                    <td className="px-4 py-3 text-foreground">{item.description}</td>
-                    <td className="px-4 py-3 text-right text-muted-foreground font-mono">{item.qty}</td>
-                    <td className="px-4 py-3 text-right text-muted-foreground font-mono">
-                      {formatCurrency(item.unitPrice, receipt.currency)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono font-semibold">
-                      {formatCurrency(item.total, receipt.currency)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div style={{ borderBottom: '1px solid var(--nx-border)' }}>
+          <div style={{ padding: '14px 28px', borderBottom: '1px solid var(--nx-border)', background: 'var(--nx-raised)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
+              {['Description', 'Qty', 'Unit price', 'Total'].map((h) => (
+                <div key={h} style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--nx-muted)', textAlign: h === 'Description' ? 'left' : 'right' }}>{h}</div>
+              ))}
+            </div>
           </div>
+          {items.map((item, i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', padding: '12px 28px', borderBottom: '1px solid var(--nx-line)' }}>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg-strong)' }}>{item.description}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-muted)', textAlign: 'right' }}>{item.qty}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-muted)', textAlign: 'right' }}>{formatCurrency(item.unitPrice, receipt.currency)}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-fg-strong)', fontWeight: 600, textAlign: 'right' }}>{formatCurrency(item.total, receipt.currency)}</div>
+            </div>
+          ))}
         </div>
 
         {/* Totals */}
-        <div className="flex justify-end">
-          <div className="w-full sm:w-72 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span className="font-mono">{formatCurrency(Number(receipt.subtotal), receipt.currency)}</span>
+        <div style={{ padding: '20px 28px', display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid var(--nx-border)' }}>
+          <div style={{ width: 280 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--nx-muted)' }}>Subtotal</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-fg)' }}>{formatCurrency(Number(receipt.subtotal), receipt.currency)}</span>
             </div>
             {Number(receipt.tax_rate) > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Tax ({(Number(receipt.tax_rate) * 100).toFixed(0)}%)</span>
-                <span className="font-mono">{formatCurrency(Number(receipt.subtotal) * Number(receipt.tax_rate), receipt.currency)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--nx-muted)' }}>Tax ({(Number(receipt.tax_rate) * 100).toFixed(0)}%)</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-fg)' }}>{formatCurrency(Number(receipt.subtotal) * Number(receipt.tax_rate), receipt.currency)}</span>
               </div>
             )}
-            <div className="flex justify-between text-base font-semibold border-t border-border pt-2">
-              <span>Total</span>
-              <span className="font-mono">{formatCurrency(Number(receipt.total), receipt.currency)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--nx-border)', paddingTop: 10 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--nx-fg-strong)' }}>Total</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 15, color: 'var(--nx-fg-strong)', fontWeight: 700 }}>{formatCurrency(Number(receipt.total), receipt.currency)}</span>
             </div>
           </div>
         </div>
 
         {/* Notes */}
         {receipt.notes && (
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Notes</p>
-            <p className="text-sm text-muted-foreground">{receipt.notes}</p>
+          <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--nx-border)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 8 }}>Notes</div>
+            <p style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg)', lineHeight: 1.6 }}>{receipt.notes}</p>
           </div>
         )}
 
-        {/* Bank details (receiver only) */}
+        {/* Bank details */}
         {bankDetails && (
-          <div className="bg-secondary border border-border rounded-lg p-4 space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Payment Details</p>
-            {bankDetails.name && <p className="text-sm"><span className="text-muted-foreground">Account holder:</span> {bankDetails.name}</p>}
-            <p className="text-sm font-mono"><span className="text-muted-foreground">Account / IBAN:</span> {bankDetails.number}</p>
-            {bankDetails.bank && <p className="text-sm"><span className="text-muted-foreground">Bank:</span> {bankDetails.bank}</p>}
-            {bankDetails.swift && <p className="text-sm font-mono"><span className="text-muted-foreground">SWIFT / BIC:</span> {bankDetails.swift}</p>}
+          <div style={{ padding: '20px 28px', borderBottom: '1px solid var(--nx-border)', background: 'var(--nx-raised)' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 12 }}>Payment Details</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              {bankDetails.name && (
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--nx-muted)', marginBottom: 4, letterSpacing: '0.1em' }}>Account holder</div>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg-strong)' }}>{bankDetails.name}</div>
+                </div>
+              )}
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--nx-muted)', marginBottom: 4, letterSpacing: '0.1em' }}>Account / IBAN</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-fg-strong)' }}>{bankDetails.number}</div>
+              </div>
+              {bankDetails.bank && (
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--nx-muted)', marginBottom: 4, letterSpacing: '0.1em' }}>Bank</div>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg-strong)' }}>{bankDetails.bank}</div>
+                </div>
+              )}
+              {bankDetails.swift && (
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--nx-muted)', marginBottom: 4, letterSpacing: '0.1em' }}>SWIFT / BIC</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-fg-strong)' }}>{bankDetails.swift}</div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Acknowledge button */}
-        {isReceiver && receipt.status === 'sent' && (
-          <form action={`/api/receipts/${params.id}/acknowledge`} method="POST">
-            <Button type="submit" className="w-full sm:w-auto">Acknowledge Receipt</Button>
-          </form>
-        )}
+        {/* Actions */}
+        <div style={{ padding: '20px 28px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Link
+            href={`/sessions/${receipt.session_id}`}
+            style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-fg)', border: '1px solid var(--nx-border)', padding: '12px 20px', textDecoration: 'none' }}
+          >
+            View session →
+          </Link>
+          {isReceiver && receipt.status === 'sent' && (
+            <form action={`/api/receipts/${id}/acknowledge`} method="POST">
+              <button
+                type="submit"
+                style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#ffffff', background: '#c44b1b', border: 'none', padding: '12px 20px', cursor: 'pointer' }}
+              >
+                Acknowledge receipt
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   )

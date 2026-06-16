@@ -1,142 +1,160 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Loader2 } from 'lucide-react'
 import { BusinessCard } from '@/components/business/BusinessCard'
-import { INDUSTRIES } from '@/lib/validators'
-import { COUNTRIES } from '@/lib/constants/countries'
 import type { BusinessSearchResult } from '@/types/business'
+
+const INDUSTRY_CHIPS = [
+  'All',
+  'Manufacturing',
+  'SaaS / IT',
+  'Finance',
+  'Food & Beverage',
+  'Pharmaceuticals',
+  'Packaging',
+  'Metals',
+  'Marketing',
+  'Technology',
+  'Logistics',
+  'Healthcare',
+  'Retail',
+  'Energy',
+  'Agriculture',
+  'Legal',
+]
 
 export default function DiscoveryPage() {
   const router = useRouter()
-  const [query, setQuery] = useState('')
-  const [country, setCountry] = useState('')
-  const [industry, setIndustry] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [industry, setIndustry] = useState('All')
   const [results, setResults] = useState<BusinessSearchResult[]>([])
-  const [searched, setSearched] = useState(false)
+  const [total, setTotal] = useState(0)
   const [isPending, startTransition] = useTransition()
 
-  async function handleSearch(e: React.FormEvent) {
-    e.preventDefault()
-    if (!query.trim()) return
-
+  function fetchBusinesses(q: string, ind: string) {
     startTransition(async () => {
-      const params = new URLSearchParams({ q: query })
-      if (country) params.set('country', country)
-      if (industry) params.set('industry', industry)
-
+      const params = new URLSearchParams()
+      if (q.trim()) params.set('q', q.trim())
+      if (ind && ind !== 'All') params.set('industry', ind.toLowerCase())
       const res = await fetch(`/api/businesses?${params}`)
       const json = await res.json()
       setResults(json.businesses ?? [])
-      setSearched(true)
+      setTotal(json.businesses?.length ?? 0)
     })
+  }
+
+  useEffect(() => { fetchBusinesses('', 'All') }, [])
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault()
+    fetchBusinesses(searchQuery, industry)
+  }
+
+  function setChip(chip: string) {
+    setIndustry(chip)
+    fetchBusinesses(searchQuery, chip)
   }
 
   async function handleStartSession(businessId: string) {
     const res = await fetch('/api/sessions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ receiverBusinessId: businessId, searchContext: query }),
+      body: JSON.stringify({ receiverBusinessId: businessId, searchContext: searchQuery }),
     })
     const json = await res.json()
-    if (res.ok) {
+    if (res.status === 409 && json.sessionId) {
+      router.push(`/sessions/${json.sessionId}`)
+    } else if (res.ok) {
       router.push(`/sessions/${json.sessionId}`)
     }
   }
 
   return (
-    <div className="container-app py-8 space-y-8">
-      <div>
-        <h1 className="text-heading text-foreground">Discovery</h1>
-        <p className="text-muted-foreground mt-1">Find verified businesses worldwide</p>
-      </div>
+    <div style={{ padding: '36px 40px' }}>
+      {/* Header */}
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 10 }}>/ Discovery</div>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 52, lineHeight: 0.9, color: 'var(--nx-fg-strong)', marginBottom: 8 }}>FIND VERIFIED PARTNERS</h1>
+      <p style={{ fontFamily: 'var(--font-serif)', fontSize: 17, color: 'var(--nx-muted)', marginBottom: 28, maxWidth: 560 }}>
+        Search in plain language. Only verified businesses with public profiles appear here.
+      </p>
 
-      {/* Search */}
-      <form onSubmit={handleSearch} className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" aria-hidden />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="I'm looking for a company that deals with logistics in Germany…"
-            className="pl-12 text-base min-h-[52px]"
-            required
+      {/* Search bar */}
+      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, border: '1px solid var(--nx-strong)', background: 'var(--nx-raised)', padding: '14px 18px' }}>
+          <span style={{ color: '#c44b1b', fontSize: 15, flexShrink: 0 }}>⌕</span>
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="e.g. compostable packaging supplier in Spain"
+            style={{
+              flex: 1,
+              background: 'none',
+              border: 'none',
+              fontFamily: 'var(--font-serif)',
+              fontSize: 16,
+              color: 'var(--nx-fg-strong)',
+              outline: 'none',
+            }}
           />
         </div>
-
-        <div className="flex flex-wrap gap-3 items-end">
-          <div className="flex-1 min-w-[150px]">
-            <select
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              className="input-base"
-              aria-label="Filter by country"
-            >
-              <option value="">All countries</option>
-              {COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex-1 min-w-[150px]">
-            <select
-              value={industry}
-              onChange={(e) => setIndustry(e.target.value)}
-              className="input-base capitalize"
-              aria-label="Filter by industry"
-            >
-              <option value="">All industries</option>
-              {INDUSTRIES.map((ind) => (
-                <option key={ind} value={ind} className="capitalize">{ind}</option>
-              ))}
-            </select>
-          </div>
-          <Button type="submit" disabled={isPending} className="gap-2 min-h-[44px]">
-            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            Search
-          </Button>
-        </div>
+        <button
+          type="submit"
+          disabled={isPending}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#ffffff', background: '#c44b1b', padding: '0 28px', cursor: 'pointer', border: 'none', flexShrink: 0 }}
+        >
+          {isPending ? <Loader2 size={12} className="animate-spin" /> : null}
+          ⌕ Search
+        </button>
       </form>
 
-      {/* Results */}
-      {isPending && (
-        <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          Searching…
+      {/* Industry chips */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+        {INDUSTRY_CHIPS.map((chip) => {
+          const active = industry === chip
+          return (
+            <button
+              key={chip}
+              onClick={() => setChip(chip)}
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: active ? '#ffffff' : 'var(--nx-fg)',
+                border: `1px solid ${active ? '#c44b1b' : 'var(--nx-strong)'}`,
+                background: active ? '#c44b1b' : 'transparent',
+                padding: '7px 13px',
+                cursor: 'pointer',
+              }}
+            >
+              {chip}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Result count */}
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--nx-muted)', borderBottom: '1px solid var(--nx-border)', paddingBottom: 12, marginBottom: 0 }}>
+        {total} verified results
+      </div>
+
+      {/* Results grid */}
+      {isPending ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: 12, color: 'var(--nx-muted)' }}>
+          <Loader2 size={18} className="animate-spin" />
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em' }}>Searching…</span>
         </div>
-      )}
-
-      {!isPending && searched && results.length === 0 && (
-        <div className="text-center py-16">
-          <p className="text-muted-foreground">No businesses found. Try broadening your search.</p>
+      ) : results.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 0' }}>
+          <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--nx-muted)' }}>No businesses found. Try a different search.</p>
         </div>
-      )}
-
-      {!isPending && results.length > 0 && (
-        <>
-          <p className="text-sm text-muted-foreground">
-            {results.length} business{results.length !== 1 ? 'es' : ''} found
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {results.map((business) => (
-              <BusinessCard
-                key={business.id}
-                business={business}
-                onStartSession={handleStartSession}
-              />
-            ))}
-          </div>
-        </>
-      )}
-
-      {!searched && (
-        <div className="text-center py-16 text-muted-foreground">
-          <Search className="w-10 h-10 mx-auto mb-4 opacity-30" />
-          <p>Search for businesses to get started.</p>
-          <p className="text-sm mt-1">Try "healthcare supplier in France" or "technology partner"</p>
+      ) : (
+        <div className="nx-discovery-grid">
+          {results.map((business) => (
+            <BusinessCard key={business.id} business={business} onStartSession={handleStartSession} />
+          ))}
         </div>
       )}
     </div>

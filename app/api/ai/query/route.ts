@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/session'
 import { queryOne } from '@/lib/db/aurora'
-import { answerQuery } from '@/lib/ai/gemini'
+import { answerQuery } from '@/lib/ai/v0'
 import { putMessage } from '@/lib/db/dynamo'
 import { AIQuerySchema } from '@/lib/validators'
 

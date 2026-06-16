@@ -79,3 +79,10 @@ export const AIQuerySchema = z.object({
   question: z.string().min(1).max(2000),
   sessionId: z.string().uuid(),
 })
+
+// Server-side user schema (ZodEffects from .refine() doesn't support .omit())
+export const RegisterUserServerSchema = z.object({
+  name: z.string().min(2).max(100),
+  email: z.string().email(),
+  password: z.string().min(12),
+})

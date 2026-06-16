@@ -2,19 +2,21 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/session'
 import { queryOne } from '@/lib/db/aurora'
 import { putMessage, getMessages } from '@/lib/db/dynamo'
-import { generateIntroduction } from '@/lib/ai/gemini'
+import { generateIntroduction, generateDemoReply } from '@/lib/ai/v0'
 import { putSystemMessage } from '@/lib/db/dynamo'
 import { query } from '@/lib/db/aurora'
 
-interface Params { params: { id: string } }
+interface Params { params: Promise<{ id: string }> }
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { id } = await params
+
   const row = await queryOne<{ initiator_business_id: string; receiver_business_id: string }>(
     `SELECT initiator_business_id, receiver_business_id FROM sessions WHERE id = $1`,
-    [params.id]
+    [id]
   )
   if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
@@ -23,13 +25,15 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const messages = await getMessages(params.id)
+  const messages = await getMessages(id)
   return NextResponse.json({ messages })
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { id } = await params
 
   const sessionRow = await queryOne<{
     status: string
@@ -51,7 +55,7 @@ export async function POST(req: NextRequest, { params }: Params) {
      JOIN users ia ON ia.id = s.initiator_agent_id
      LEFT JOIN users ra ON ra.id = s.receiver_agent_id
      WHERE s.id = $1`,
-    [params.id]
+    [id]
   )
 
   if (!sessionRow) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -69,7 +73,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!content) return NextResponse.json({ error: 'Content required' }, { status: 400 })
 
   const msg = await putMessage({
-    session_id: params.id,
+    session_id: id,
     sender_id: session.user.id,
     sender_name: session.user.name,
     sender_business: uid === sessionRow.initiator_business_id ? sessionRow.ib_name : sessionRow.rb_name,
@@ -77,8 +81,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     type: 'text',
   })
 
-  // Fire AI introduction once when session becomes active and first message is sent
-  if (!sessionRow.ai_introduced && sessionRow.status === 'active') {
+  // Fire AI introduction once — for demo sessions (auto-accepted as 'active') or real active sessions
+  if (!sessionRow.ai_introduced && (sessionRow.status === 'active' || sessionRow.status === 'pending')) {
     const intro = await generateIntroduction({
       businessAName: sessionRow.ib_name,
       businessADescription: sessionRow.ib_desc ?? '',
@@ -89,8 +93,47 @@ export async function POST(req: NextRequest, { params }: Params) {
       searchContext: sessionRow.search_context ?? undefined,
     })
 
-    await putSystemMessage(params.id, intro, 'ai_response')
-    await query(`UPDATE sessions SET ai_introduced = true WHERE id = $1`, [params.id])
+    await putSystemMessage(id, intro, 'ai_response')
+    await query(`UPDATE sessions SET ai_introduced = true WHERE id = $1`, [id])
+  }
+
+  // Demo auto-reply: if receiver business has no users, AI replies on their behalf
+  const isSenderInitiator = uid === sessionRow.initiator_business_id
+  const receiverBizId = isSenderInitiator
+    ? sessionRow.receiver_business_id
+    : sessionRow.initiator_business_id
+
+  const receiverHasUsers = await queryOne<{ count: string }>(
+    `SELECT COUNT(*)::text as count FROM users WHERE business_id = $1`,
+    [receiverBizId]
+  )
+
+  if (receiverHasUsers && parseInt(receiverHasUsers.count) === 0 && sessionRow.status === 'active') {
+    const receiverBizName = isSenderInitiator ? sessionRow.rb_name : sessionRow.ib_name
+    const receiverBizDesc = isSenderInitiator ? sessionRow.rb_desc : sessionRow.ib_desc
+    const senderBizName = isSenderInitiator ? sessionRow.ib_name : sessionRow.rb_name
+
+    const reply = await generateDemoReply(
+      receiverBizName,
+      receiverBizDesc ?? '',
+      senderBizName,
+      content
+    )
+
+    await putMessage({
+      session_id: id,
+      sender_id: `demo:${receiverBizId}`,
+      sender_name: `${receiverBizName} (Demo)`,
+      sender_business: receiverBizName,
+      content: reply,
+      type: 'text',
+    })
+
+    await putSystemMessage(
+      id,
+      `⚠️ Demo mode: AI is representing ${receiverBizName}. In real life, a human would reply.`,
+      'system'
+    )
   }
 
   return NextResponse.json({ message: msg }, { status: 201 })
