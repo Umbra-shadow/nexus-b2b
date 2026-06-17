@@ -79,32 +79,32 @@
 }
 
 /* ============================================================
-   NexusB2B Design System — Dark (default)
+   NexusB2B Design System — Dark (default, warm amber undertone)
    ============================================================ */
 :root {
-  --nx-bg: #0a0a0a;
-  --nx-raised: #111111;
-  --nx-panel: #0d0d0d;
-  --nx-line: #1a1a1a;
-  --nx-border: #222222;
-  --nx-strong: #333333;
-  --nx-faint: #444444;
-  --nx-subtle: #555555;
-  --nx-muted: #888888;
-  --nx-fg: #b8b8b8;
-  --nx-fg-bright: #e8e8e8;
-  --nx-fg-strong: #ffffff;
+  --nx-bg: #0c0a08;
+  --nx-raised: #131108;
+  --nx-panel: #100e0a;
+  --nx-line: #1d1a12;
+  --nx-border: #252018;
+  --nx-strong: #342e22;
+  --nx-faint: #48412e;
+  --nx-subtle: #5c5444;
+  --nx-muted: #8a7e68;
+  --nx-fg: #bdb49e;
+  --nx-fg-bright: #e8dfd0;
+  --nx-fg-strong: #f5f0e8;
   --nx-accent: #c44b1b;
 }
 
 :root[data-theme="light"] {
-  --nx-bg: #f3f0e8;
+  --nx-bg: #f8f7f5;
   --nx-raised: #ffffff;
-  --nx-panel: #fbf9f4;
-  --nx-line: #e8e3d8;
-  --nx-border: #ddd6c9;
-  --nx-strong: #cabfac;
-  --nx-faint: #b4a995;
+  --nx-panel: #fefefe;
+  --nx-line: #edeae4;
+  --nx-border: #e2ddd6;
+  --nx-strong: #cdc8be;
+  --nx-faint: #b8b3a8;
   --nx-subtle: #9c9384;
   --nx-muted: #6c6456;
   --nx-fg: #433e36;

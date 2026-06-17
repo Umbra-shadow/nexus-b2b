@@ -136,20 +136,21 @@ export default async function DashboardPage() {
             <div style={{ padding: '24px', fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-muted)', fontStyle: 'italic' }}>No sessions yet.</div>
           ) : (
             recentSessions.map((s) => (
-              <Link key={s.id} href={`/sessions/${s.id}`} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', borderBottom: '1px solid var(--nx-line)', textDecoration: 'none' }}>
-                <div style={{ width: 34, height: 34, border: '1px solid var(--nx-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 15, color: 'var(--nx-fg-strong)', flexShrink: 0 }}>
+              <Link key={s.id} href={`/sessions/${s.id}`} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 24px', borderBottom: '1px solid var(--nx-line)', textDecoration: 'none' }}>
+                <div style={{ width: 32, height: 32, border: '1px solid var(--nx-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 14, color: 'var(--nx-fg-strong)', flexShrink: 0 }}>
                   {getInitials(s.other_business_name)}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg-strong)', lineHeight: 1.3 }}>{s.other_business_name}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.06em', color: 'var(--nx-muted)', textTransform: 'uppercase', marginTop: 3 }}>{s.other_business_industry}</div>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-fg-strong)', lineHeight: 1.25 }}>{s.other_business_name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: STATUS_COLOR[s.status] ?? 'var(--nx-muted)' }}>
+                      {s.status}
+                    </span>
+                    <span style={{ width: 2, height: 2, borderRadius: 9999, background: 'var(--nx-strong)', display: 'inline-block' }} />
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--nx-subtle)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{s.other_business_industry}</span>
+                  </div>
                 </div>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: STATUS_COLOR[s.status] ?? 'var(--nx-muted)', border: `1px solid ${STATUS_BORDER[s.status] ?? 'var(--nx-strong)'}`, padding: '3px 7px', flexShrink: 0 }}>
-                  {s.status}
-                </span>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--nx-subtle)', width: 40, textAlign: 'right', flexShrink: 0 }}>
-                  {formatDateTime(s.created_at)}
-                </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-subtle)', flexShrink: 0 }}>→</span>
               </Link>
             ))
           )}

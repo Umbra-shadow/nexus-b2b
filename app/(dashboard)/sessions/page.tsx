@@ -36,14 +36,14 @@ export default async function SessionsPage() {
 
   const sessions = await query<SessionRow>(
     `SELECT s.id, s.status, s.created_at, s.accepted_at,
-       CASE WHEN s.initiator_business_id = $2 THEN rb.name ELSE ib.name END as other_business_name,
-       (s.initiator_business_id = $2) as is_initiator
+       CASE WHEN s.initiator_business_id = $1 THEN rb.name ELSE ib.name END as other_business_name,
+       (s.initiator_business_id = $1) as is_initiator
      FROM sessions s
      JOIN businesses ib ON ib.id = s.initiator_business_id
      JOIN businesses rb ON rb.id = s.receiver_business_id
-     WHERE s.initiator_business_id = $2 OR s.receiver_business_id = $2
+     WHERE s.initiator_business_id = $1 OR s.receiver_business_id = $1
      ORDER BY s.created_at DESC`,
-    [user.id, user.businessId]
+    [user.businessId]
   )
 
   const grouped = {

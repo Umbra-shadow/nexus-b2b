@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth/session'
 import { query, queryOne } from '@/lib/db/aurora'
 import { putMessage, getMessages, putSystemMessage } from '@/lib/db/dynamo'
 import { generateDemoReply } from '@/lib/ai/v0'
+import { getPresignedUrl } from '@/lib/s3/upload'
 
 interface Params { params: Promise<{ id: string }> }
 
@@ -23,7 +24,16 @@ export async function GET(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const messages = await getMessages(id)
+  const raw = await getMessages(id)
+  // Resolve presigned download URLs for attachment messages
+  const messages = await Promise.all(
+    raw.map(async (m) => {
+      if (m.type === 'attachment' && m.attachment_key) {
+        return { ...m, attachment_url: await getPresignedUrl(m.attachment_key, 3600) }
+      }
+      return m
+    })
+  )
   return NextResponse.json({ messages })
 }
 
@@ -71,6 +81,8 @@ export async function POST(req: NextRequest, { params }: Params) {
   const body = await req.json()
   const content = (body.content ?? '').trim()
   if (!content) return NextResponse.json({ error: 'Content required' }, { status: 400 })
+  // Clients may send type='card' for bank/contact info cards; everything else defaults to 'text'
+  const msgType = body.type === 'card' ? 'card' : 'text'
 
   const msg = await putMessage({
     session_id: id,
@@ -78,7 +90,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     sender_name: session.user.name,
     sender_business: uid === sessionRow.initiator_business_id ? sessionRow.ib_name : sessionRow.rb_name,
     content,
-    type: 'text',
+    type: msgType,
   })
 
   // Demo auto-reply: if receiver business has no users, AI replies on their behalf

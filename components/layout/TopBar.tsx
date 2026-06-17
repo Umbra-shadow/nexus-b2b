@@ -27,6 +27,7 @@ export function TopBar() {
   useEffect(() => {
     const saved = localStorage.getItem('nx-theme') || 'dark'
     setTheme(saved)
+    document.documentElement.setAttribute('data-theme', saved)
   }, [])
 
   useEffect(() => {
@@ -43,8 +44,7 @@ export function TopBar() {
     document.documentElement.setAttribute('data-theme', next)
   }
 
-  const themeGlyph = theme === 'dark' ? '☀' : '☾'
-  const themeLabel = theme === 'dark' ? 'Light' : 'Dark'
+  const isDark = theme === 'dark'
 
   // Build breadcrumb text — format: / SectionName
   let crumb = ''
@@ -110,13 +110,15 @@ export function TopBar() {
         </div>
       </form>
 
-      {/* Theme toggle */}
+      {/* Theme toggle — pill switch */}
       <button
         onClick={toggleTheme}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c44b1b', border: '1px solid #c44b1b', background: 'var(--nx-raised)', padding: '8px 12px', cursor: 'pointer', lineHeight: 1, flexShrink: 0 }}
-        title="Toggle light / dark"
+        title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 0, cursor: 'pointer', border: '1px solid var(--nx-border)', background: 'var(--nx-raised)', padding: 0, lineHeight: 1, overflow: 'hidden', flexShrink: 0 }}
       >
-        {themeGlyph} {themeLabel}
+        <span style={{ padding: '8px 12px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', background: isDark ? '#c44b1b' : 'transparent', color: isDark ? '#fff' : 'var(--nx-muted)', transition: 'background 0.2s, color 0.2s', whiteSpace: 'nowrap' }}>☾ Dark</span>
+        <span style={{ width: 1, height: 28, background: 'var(--nx-border)', flexShrink: 0 }} />
+        <span style={{ padding: '8px 12px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', background: !isDark ? '#c44b1b' : 'transparent', color: !isDark ? '#fff' : 'var(--nx-muted)', transition: 'background 0.2s, color 0.2s', whiteSpace: 'nowrap' }}>☀ Light</span>
       </button>
 
       {/* Business info */}

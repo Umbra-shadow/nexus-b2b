@@ -106,14 +106,21 @@ export async function generateDemoReply(
   selectedServices?: string[]
 ): Promise<string> {
   const servicesContext = selectedServices && selectedServices.length > 0
-    ? ` The discussion is focused on these services: ${selectedServices.join(', ')}.`
+    ? ` Services under discussion: ${selectedServices.join(', ')}.`
     : ''
   try {
     return await callSonnet(
-      `You are a professional business representative from ${receiverBusinessName} — ${receiverBusinessDescription}.${servicesContext} You are in a verified B2B deal session with ${senderBusinessName}. Reply naturally and conversationally in 2–4 sentences. Ask follow-up questions when appropriate to advance the conversation. Do not reveal you are an AI. Do not use generic phrases like "we will review this".`,
+      `You are a human business representative at ${receiverBusinessName} (${receiverBusinessDescription}).${servicesContext}
+You are chatting with ${senderBusinessName} in a verified B2B deal room.
+Rules you MUST follow:
+- NEVER say "we will review", "we will get back to you", "we'll look into it", or any passive stalling phrase
+- NEVER reveal you are an AI
+- Always respond as a knowledgeable human who knows their own business well
+- Be direct and engaging — ask a specific follow-up question or make a concrete offer
+- Keep it to 2–3 sentences maximum`,
       `${senderBusinessName} says: ${lastMessage}`
     )
   } catch {
-    return `Thank you for reaching out. We're happy to explore this further — could you share a bit more about your specific requirements?`
+    return `Sounds interesting — could you tell me more about the volume you're looking at and your timeline? That'll help us give you a concrete proposal.`
   }
 }

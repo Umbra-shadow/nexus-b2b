@@ -8,11 +8,10 @@ export async function GET() {
 
   const row = await queryOne<{ pending: string; unacknowledged: string }>(
     `SELECT
-       COUNT(CASE WHEN (initiator_business_id = $1 OR receiver_business_id = $1) AND status = 'pending' THEN 1 END) AS pending,
-       COUNT(CASE WHEN receiver_business_id = $1 AND status = 'sent' THEN 1 END) AS unacknowledged
-     FROM sessions s
-     LEFT JOIN receipts r ON r.receiver_business_id = $1 AND r.status = 'sent'
-     WHERE s.initiator_business_id = $1 OR s.receiver_business_id = $1`,
+       (SELECT COUNT(*)::text FROM sessions
+        WHERE (initiator_business_id = $1 OR receiver_business_id = $1) AND status = 'pending') AS pending,
+       (SELECT COUNT(*)::text FROM receipts
+        WHERE receiver_business_id = $1 AND status = 'sent') AS unacknowledged`,
     [session.user.businessId]
   )
 

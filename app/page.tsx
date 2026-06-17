@@ -44,7 +44,7 @@ export default function LandingPage() {
     document.documentElement.setAttribute('data-theme', next)
   }
 
-  const themeGlyph = theme === 'dark' ? '○' : '●'
+  const isDark = theme === 'dark'
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--nx-bg)' }}>
@@ -56,8 +56,14 @@ export default function LandingPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', cursor: 'pointer' }}>Platform</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', cursor: 'pointer' }}>Verification</span>
-            <button onClick={toggleTheme} title="Toggle theme" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--nx-muted)', border: '1px solid var(--nx-border)', padding: '6px 10px', background: 'none', cursor: 'pointer', lineHeight: 1 }}>
-              {themeGlyph}
+            <button
+              onClick={toggleTheme}
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 0, cursor: 'pointer', border: '1px solid var(--nx-border)', background: 'var(--nx-raised)', padding: 0, lineHeight: 1, overflow: 'hidden' }}
+            >
+              <span style={{ padding: '7px 11px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', background: isDark ? '#c44b1b' : 'transparent', color: isDark ? '#fff' : 'var(--nx-muted)', transition: 'background 0.2s, color 0.2s' }}>☾ Dark</span>
+              <span style={{ width: 1, height: 28, background: 'var(--nx-border)', flexShrink: 0 }} />
+              <span style={{ padding: '7px 11px', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', background: !isDark ? '#c44b1b' : 'transparent', color: !isDark ? '#fff' : 'var(--nx-muted)', transition: 'background 0.2s, color 0.2s' }}>☀ Light</span>
             </button>
             <Link href="/auth/login" style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-fg)', textDecoration: 'none' }}>Log in</Link>
             <Link href="/auth/register" style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#ffffff', background: '#c44b1b', padding: '10px 18px', textDecoration: 'none' }}>Register →</Link>
@@ -74,7 +80,7 @@ export default function LandingPage() {
           </div>
 
           {/* Full-width headline */}
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(72px,10vw,144px)', lineHeight: 0.86, letterSpacing: '0.01em', color: 'var(--nx-fg-strong)', marginBottom: 28 }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(48px,7vw,100px)', lineHeight: 0.88, letterSpacing: '0.01em', color: 'var(--nx-fg-strong)', marginBottom: 28 }}>
             THE DEAL ROOM<br />FOR <span style={{ color: '#c44b1b' }}>VERIFIED</span><br />BUSINESS.
           </h1>
 
@@ -210,8 +216,8 @@ export default function LandingPage() {
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--nx-subtle)' }}>© 2026 NexusB2B</span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#c8a240', border: '1px solid #4a4020', padding: '4px 9px' }}>Demo build — fictional businesses</span>
             </div>
-            <button onClick={toggleTheme} style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-muted)', border: '1px solid var(--nx-border)', padding: '6px 10px', background: 'none', cursor: 'pointer' }}>
-              {themeGlyph} {theme === 'dark' ? 'Light' : 'Dark'}
+            <button onClick={toggleTheme} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: isDark ? '#fff' : 'var(--nx-muted)', border: '1px solid var(--nx-border)', padding: '7px 12px', background: isDark ? '#c44b1b' : 'transparent', cursor: 'pointer' }}>
+              {isDark ? '☾ Dark' : '☀ Light'}
             </button>
           </div>
         </div>

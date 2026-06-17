@@ -80,6 +80,7 @@ export const UpdateBusinessSchema = z.object({
 export const AIQuerySchema = z.object({
   question: z.string().min(1).max(2000),
   sessionId: z.string().uuid(),
+  private: z.boolean().default(false),
 })
 
 // Server-side user schema (ZodEffects from .refine() doesn't support .omit())

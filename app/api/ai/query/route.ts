@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 422 })
   }
 
-  const { question, sessionId } = parsed.data
+  const { question, sessionId, private: isPrivate } = parsed.data
 
   const row = await queryOne<{ status: string; initiator_business_id: string; receiver_business_id: string }>(
     `SELECT status, initiator_business_id, receiver_business_id FROM sessions WHERE id = $1`,
@@ -33,14 +33,17 @@ export async function POST(req: NextRequest) {
 
   const answer = await answerQuery(question)
 
-  await putMessage({
-    session_id: sessionId,
-    sender_id: 'ai',
-    sender_name: 'NexusB2B AI',
-    sender_business: 'NexusB2B',
-    content: answer,
-    type: 'ai_response',
-  })
+  // Only write to chat when not private (private = Lummy panel, stays out of the conversation)
+  if (!isPrivate) {
+    await putMessage({
+      session_id: sessionId,
+      sender_id: 'ai',
+      sender_name: 'NexusB2B AI',
+      sender_business: 'NexusB2B',
+      content: answer,
+      type: 'ai_response',
+    })
+  }
 
   return NextResponse.json({ answer })
 }

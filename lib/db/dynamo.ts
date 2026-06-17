@@ -23,7 +23,7 @@ export const docClient = DynamoDBDocumentClient.from(client, {
 
 const TABLE = process.env.DYNAMODB_TABLE_MESSAGES ?? 'nexusb2b_messages'
 
-export type MessageType = 'text' | 'system' | 'ai_response' | 'receipt_ref'
+export type MessageType = 'text' | 'system' | 'ai_response' | 'receipt_ref' | 'attachment' | 'card'
 
 export interface ChatMessage {
   session_id: string
@@ -35,6 +35,12 @@ export interface ChatMessage {
   type: MessageType
   created_at: string
   receipt_id?: string
+  // Attachment (PDF)
+  attachment_key?: string
+  attachment_name?: string
+  attachment_size?: number
+  // Resolved server-side for display — not stored in Dynamo
+  attachment_url?: string
 }
 
 export async function putMessage(
