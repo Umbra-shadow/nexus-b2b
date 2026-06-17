@@ -54,8 +54,8 @@ export default function LandingPage() {
         <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 80, borderBottom: '1px solid var(--nx-border)', flexWrap: 'wrap', gap: 16 }}>
           <NxLogo />
           <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', cursor: 'pointer' }}>Platform</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', cursor: 'pointer' }}>Verification</span>
+            <Link href="/platform/discovery" style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', textDecoration: 'none' }}>Platform</Link>
+            <Link href="/platform/verification" style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', textDecoration: 'none' }}>Verification</Link>
             <button
               onClick={toggleTheme}
               title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -189,24 +189,24 @@ export default function LandingPage() {
             <div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--nx-subtle)', marginBottom: 18 }}>Platform</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {['Discovery', 'Sessions', 'Receipts', 'Verification'].map(l => (
-                  <span key={l} style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg)', cursor: 'pointer' }}>{l}</span>
+                {[['Discovery', '/platform/discovery'], ['Sessions', '/platform/sessions'], ['Receipts', '/platform/receipts'], ['Verification', '/platform/verification']].map(([l, h]) => (
+                  <Link key={l} href={h} className="nx-foot-link" style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg)', textDecoration: 'none' }}>{l}</Link>
                 ))}
               </div>
             </div>
             <div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--nx-subtle)', marginBottom: 18 }}>Company</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {['About', 'Careers', 'Contact', 'Press'].map(l => (
-                  <span key={l} style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg)', cursor: 'pointer' }}>{l}</span>
+                {[['About', '/about'], ['Careers', '/careers'], ['Contact', '/contact'], ['Press', '/press']].map(([l, h]) => (
+                  <Link key={l} href={h} className="nx-foot-link" style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg)', textDecoration: 'none' }}>{l}</Link>
                 ))}
               </div>
             </div>
             <div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--nx-subtle)', marginBottom: 18 }}>Trust</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {['Security', 'Privacy', 'Terms', 'Status'].map(l => (
-                  <span key={l} style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg)', cursor: 'pointer' }}>{l}</span>
+                {[['Security', '/security'], ['Privacy', '/privacy'], ['Terms', '/terms'], ['Status', '/status']].map(([l, h]) => (
+                  <Link key={l} href={h} className="nx-foot-link" style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg)', textDecoration: 'none' }}>{l}</Link>
                 ))}
               </div>
             </div>
@@ -224,6 +224,7 @@ export default function LandingPage() {
       </div>
 
       <style>{`
+        .nx-foot-link:hover { color: #c44b1b !important; }
         @media (max-width: 768px) {
           .nx-stat-row { grid-template-columns: repeat(2,1fr) !important; }
           .nx-preview-grid { grid-template-columns: repeat(2,1fr) !important; }

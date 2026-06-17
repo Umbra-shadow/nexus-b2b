@@ -9,6 +9,16 @@ const PUBLIC_PATHS = [
   '/auth/reset-password',
   '/auth/accept-invite',
   '/api/auth',
+  // Public marketing / informational pages
+  '/platform',
+  '/about',
+  '/careers',
+  '/contact',
+  '/press',
+  '/security',
+  '/privacy',
+  '/terms',
+  '/status',
 ]
 
 // Only rate-limit POST requests on auth mutation endpoints (not page navigations)
