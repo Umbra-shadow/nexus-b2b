@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid user data', details: userData.error.flatten() }, { status: 422 })
     }
 
-    const { businessName, industry, country, city, website, description } = bizData.data
+    const { businessName, industry, country, city, website, description, services } = bizData.data
     const { name, email, password } = userData.data
 
     const existingUser = await queryOne(`SELECT id FROM users WHERE email = $1`, [email])
@@ -54,10 +54,10 @@ export async function POST(req: NextRequest) {
 
     const { businessId, userId, token } = await transaction(async (client) => {
       const bizRes = await client.query(
-        `INSERT INTO businesses (name, slug, industry, country, city, website, description)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `INSERT INTO businesses (name, slug, industry, country, city, website, description, services)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          RETURNING id`,
-        [businessName, slug, industry, country, city ?? null, website ?? null, description ?? null]
+        [businessName, slug, industry, country, city ?? null, website ?? null, description ?? null, services ?? []]
       )
       const businessId = bizRes.rows[0].id as string
 

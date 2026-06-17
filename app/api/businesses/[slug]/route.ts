@@ -22,8 +22,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
     website: string | null
     logo_s3_key: string | null
     verification_status: string
+    services: string[] | null
   }>(
-    `SELECT id, name, slug, industry, country, city, description, website, logo_s3_key, verification_status
+    `SELECT id, name, slug, industry, country, city, description, website, logo_s3_key, verification_status, services
      FROM businesses
      WHERE slug = $1 AND verification_status = 'verified'`,
     [slug]
@@ -43,7 +44,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   )
 
   return NextResponse.json({
-    business: { ...business, logoUrl },
+    business: { ...business, logoUrl, services: business.services ?? [] },
     existingSessionId: existingSession?.id ?? null,
   })
 }

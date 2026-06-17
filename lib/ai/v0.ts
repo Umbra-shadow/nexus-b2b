@@ -1,11 +1,35 @@
-import OpenAI from 'openai'
+import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
 
-const client = new OpenAI({
-  apiKey: process.env.V0_API_KEY!,
-  baseURL: 'https://api.v0.dev/v1',
+const bedrock = new BedrockRuntimeClient({
+  region: process.env.AWS_REGION ?? 'us-east-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
 })
 
-const MODEL = 'v0-1.5-md'
+// Set BEDROCK_MODEL_ID in .env to override (e.g. anthropic.claude-3-5-sonnet-20241022-v2:0)
+const MODEL_ID = process.env.BEDROCK_MODEL_ID ?? 'anthropic.claude-sonnet-4-5'
+
+async function callSonnet(systemPrompt: string, userMessage: string): Promise<string> {
+  const body = JSON.stringify({
+    anthropic_version: 'bedrock-2023-05-31',
+    max_tokens: 512,
+    system: systemPrompt,
+    messages: [{ role: 'user', content: userMessage }],
+  })
+
+  const cmd = new InvokeModelCommand({
+    modelId: MODEL_ID,
+    contentType: 'application/json',
+    accept: 'application/json',
+    body,
+  })
+
+  const response = await bedrock.send(cmd)
+  const result = JSON.parse(new TextDecoder().decode(response.body))
+  return result.content?.[0]?.text ?? ''
+}
 
 export interface SearchQueryParsed {
   industry: string | null
@@ -14,26 +38,15 @@ export interface SearchQueryParsed {
 }
 
 export async function parseSearchQuery(queryText: string): Promise<SearchQueryParsed> {
-  const completion = await client.chat.completions.create({
-    model: MODEL,
-    messages: [
-      {
-        role: 'user',
-        content: `Extract structured search parameters from this B2B business search query. Return ONLY a JSON object with fields: industry (one of: technology, finance, healthcare, manufacturing, logistics, retail, energy, agriculture, legal, other — or null if not specified), country (ISO 3166-1 alpha-2 code or null), keywords (cleaned search terms as a string).
-
-Query: "${queryText}"
-
-Return only valid JSON, nothing else.`,
-      },
-    ],
-    temperature: 0,
-  })
-
   try {
-    const text = (completion.choices[0]?.message?.content ?? '').trim()
-      .replace(/^```json\n?/, '')
-      .replace(/\n?```$/, '')
-    return JSON.parse(text) as SearchQueryParsed
+    const text = await callSonnet(
+      'You extract structured search parameters from B2B business search queries. Return ONLY valid JSON, nothing else.',
+      `Extract search parameters from this query. Return a JSON object with fields: industry (one of: technology, finance, healthcare, manufacturing, logistics, retail, energy, agriculture, legal, other — or null), country (ISO 3166-1 alpha-2 or null), keywords (cleaned search terms as string).
+
+Query: "${queryText}"`
+    )
+
+    return JSON.parse(text.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '')) as SearchQueryParsed
   } catch {
     return { industry: null, country: null, keywords: queryText }
   }
@@ -47,87 +60,60 @@ export interface IntroductionParams {
   businessBDescription: string
   agentBName: string
   searchContext?: string
+  selectedServices?: string[]
 }
 
 export async function generateIntroduction(params: IntroductionParams): Promise<string> {
-  const completion = await client.chat.completions.create({
-    model: MODEL,
-    messages: [
-      {
-        role: 'system',
-        content:
-          'You are an AI business introduction specialist on NexusB2B, a verified B2B platform. Write only the introduction message — no meta-commentary, no preamble.',
-      },
-      {
-        role: 'user',
-        content: `Generate a warm, professional introduction message to open a deal session between two businesses. Be concise (3-4 sentences), formal, then announce you are stepping back and available on-demand.
+  const servicesLine = params.selectedServices && params.selectedServices.length > 0
+    ? `Services of interest: ${params.selectedServices.join(', ')}`
+    : ''
+  try {
+    return await callSonnet(
+      'You are Lummy, an AI business introduction specialist on NexusB2B — a verified B2B network. Write only the introduction message. No meta-commentary, no preamble, no markdown headers.',
+      `Write a warm, professional opening message for a B2B deal session. Introduce both parties by name. If services of interest are listed, mention them naturally. Be concise (3–5 sentences total). Close by telling them you are stepping back and available any time via /ai.
 
 Business A: ${params.businessAName} — ${params.businessADescription}
 Agent A: ${params.agentAName}
 Business B: ${params.businessBName} — ${params.businessBDescription}
 Agent B: ${params.agentBName}
-${params.searchContext ? `Context: ${params.agentAName}'s company is looking for: ${params.searchContext}` : ''}
-
-End by telling both parties you are stepping back and they can call you anytime by typing /ai followed by their question.`,
-      },
-    ],
-    temperature: 0.7,
-  })
-
-  return (
-    completion.choices[0]?.message?.content ??
-    "Welcome to NexusB2B! I'm connecting you both. I'll step back now — type /ai anytime to call me."
-  )
+${params.searchContext ? `Search context: ${params.searchContext}` : ''}
+${servicesLine}`
+    )
+  } catch {
+    const servicesNote = params.selectedServices && params.selectedServices.length > 0
+      ? ` The focus for this session is: ${params.selectedServices.join(', ')}.`
+      : ''
+    return `Welcome to NexusB2B. I'm Lummy — I've connected ${params.businessAName} and ${params.businessBName}. Both companies are verified on this network.${servicesNote} I'll step back now; type /ai followed by your question any time to reach me.`
+  }
 }
 
 export async function answerQuery(question: string): Promise<string> {
-  const completion = await client.chat.completions.create({
-    model: MODEL,
-    messages: [
-      {
-        role: 'system',
-        content:
-          'You are a professional B2B business assistant on NexusB2B. Answer questions concisely and helpfully in a professional tone. Answer only what is asked.',
-      },
-      {
-        role: 'user',
-        content: question,
-      },
-    ],
-    temperature: 0.5,
-  })
-
-  return (
-    completion.choices[0]?.message?.content ??
-    'I was unable to process your question. Please try again.'
-  )
+  try {
+    return await callSonnet(
+      `You are Lummy, an AI assistant inside a B2B deal session on NexusB2B. You answer only business-relevant questions — market prices, industry benchmarks, trade regulations, logistics standards, and similar factual business topics. If the question is outside that scope (personal, unrelated to business), politely decline and redirect to business topics. Be concise and professional.`,
+      question
+    )
+  } catch {
+    return 'I was unable to process your question. Please try again.'
+  }
 }
 
 export async function generateDemoReply(
   receiverBusinessName: string,
   receiverBusinessDescription: string,
   senderBusinessName: string,
-  lastMessage: string
+  lastMessage: string,
+  selectedServices?: string[]
 ): Promise<string> {
-  const completion = await client.chat.completions.create({
-    model: MODEL,
-    messages: [
-      {
-        role: 'system',
-        content: `You are responding on behalf of ${receiverBusinessName} — ${receiverBusinessDescription}.
-You are a professional business representative. Reply naturally and professionally to the other party's message in 2-4 sentences.
-Stay in character as a representative of ${receiverBusinessName}. Do not break character or reveal you are an AI.`,
-      },
-      {
-        role: 'user',
-        content: `Message from ${senderBusinessName}: ${lastMessage}`,
-      },
-    ],
-    temperature: 0.8,
-  })
-
-  return (
-    completion.choices[0]?.message?.content ??
-    `Thank you for reaching out. We are reviewing your message and will respond shortly.`
-  )
+  const servicesContext = selectedServices && selectedServices.length > 0
+    ? ` The discussion is focused on these services: ${selectedServices.join(', ')}.`
+    : ''
+  try {
+    return await callSonnet(
+      `You are a professional business representative from ${receiverBusinessName} — ${receiverBusinessDescription}.${servicesContext} You are in a verified B2B deal session with ${senderBusinessName}. Reply naturally and conversationally in 2–4 sentences. Ask follow-up questions when appropriate to advance the conversation. Do not reveal you are an AI. Do not use generic phrases like "we will review this".`,
+      `${senderBusinessName} says: ${lastMessage}`
+    )
+  } catch {
+    return `Thank you for reaching out. We're happy to explore this further — could you share a bit more about your specific requirements?`
+  }
 }

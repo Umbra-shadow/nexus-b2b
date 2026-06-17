@@ -243,7 +243,7 @@ export default function SessionPage() {
             const isOwn = msg.sender_id === myId
             const isAI = msg.sender_id === 'ai' || msg.type === 'ai_response'
             const isSystem = msg.type === 'system'
-            const isLummy = msg.type === 'ai_query_response' || msg.sender_id === 'lummy'
+            const isLummy = msg.sender_id === 'lummy'
 
             // AI intro box (purple-bordered)
             if (isAI) {

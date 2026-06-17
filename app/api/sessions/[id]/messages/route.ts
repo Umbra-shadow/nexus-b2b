@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/session'
-import { queryOne } from '@/lib/db/aurora'
-import { putMessage, getMessages } from '@/lib/db/dynamo'
-import { generateIntroduction, generateDemoReply } from '@/lib/ai/v0'
-import { putSystemMessage } from '@/lib/db/dynamo'
-import { query } from '@/lib/db/aurora'
+import { query, queryOne } from '@/lib/db/aurora'
+import { putMessage, getMessages, putSystemMessage } from '@/lib/db/dynamo'
+import { generateDemoReply } from '@/lib/ai/v0'
 
 interface Params { params: Promise<{ id: string }> }
 
@@ -41,11 +39,13 @@ export async function POST(req: NextRequest, { params }: Params) {
     initiator_business_id: string
     receiver_business_id: string
     search_context: string | null
+    selected_services: string[] | null
     ib_name: string; ib_desc: string | null
     rb_name: string; rb_desc: string | null
     ia_name: string; ra_name: string | null
   }>(
-    `SELECT s.status, s.ai_introduced, s.initiator_business_id, s.receiver_business_id, s.search_context,
+    `SELECT s.status, s.ai_introduced, s.initiator_business_id, s.receiver_business_id,
+            s.search_context, s.selected_services,
             ib.name as ib_name, ib.description as ib_desc,
             rb.name as rb_name, rb.description as rb_desc,
             ia.name as ia_name, ra.name as ra_name
@@ -81,22 +81,6 @@ export async function POST(req: NextRequest, { params }: Params) {
     type: 'text',
   })
 
-  // Fire AI introduction once — for demo sessions (auto-accepted as 'active') or real active sessions
-  if (!sessionRow.ai_introduced && (sessionRow.status === 'active' || sessionRow.status === 'pending')) {
-    const intro = await generateIntroduction({
-      businessAName: sessionRow.ib_name,
-      businessADescription: sessionRow.ib_desc ?? '',
-      agentAName: sessionRow.ia_name,
-      businessBName: sessionRow.rb_name,
-      businessBDescription: sessionRow.rb_desc ?? '',
-      agentBName: sessionRow.ra_name ?? 'their team',
-      searchContext: sessionRow.search_context ?? undefined,
-    })
-
-    await putSystemMessage(id, intro, 'ai_response')
-    await query(`UPDATE sessions SET ai_introduced = true WHERE id = $1`, [id])
-  }
-
   // Demo auto-reply: if receiver business has no users, AI replies on their behalf
   const isSenderInitiator = uid === sessionRow.initiator_business_id
   const receiverBizId = isSenderInitiator
@@ -117,7 +101,8 @@ export async function POST(req: NextRequest, { params }: Params) {
       receiverBizName,
       receiverBizDesc ?? '',
       senderBizName,
-      content
+      content,
+      sessionRow.selected_services ?? []
     )
 
     await putMessage({

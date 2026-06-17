@@ -4,6 +4,8 @@ import { query, queryOne } from '@/lib/db/aurora'
 import { generateToken } from '@/lib/auth/tokens'
 import { sendSessionInvitation } from '@/lib/email/ses'
 import { CreateSessionSchema } from '@/lib/validators'
+import { generateIntroduction } from '@/lib/ai/v0'
+import { putSystemMessage } from '@/lib/db/dynamo'
 
 export async function GET(_req: NextRequest) {
   const session = await auth()
@@ -34,15 +36,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid data', details: parsed.error.flatten() }, { status: 422 })
   }
 
-  const { receiverBusinessId, searchContext } = parsed.data
+  const { receiverBusinessId, searchContext, selectedServices } = parsed.data
   const initiatorBusinessId = session.user.businessId
 
   if (receiverBusinessId === initiatorBusinessId) {
     return NextResponse.json({ error: 'Cannot start a session with your own business' }, { status: 400 })
   }
 
-  const receiverBusiness = await queryOne<{ id: string; name: string; description: string | null }>(
-    `SELECT id, name, description FROM businesses WHERE id = $1 AND verification_status = 'verified'`,
+  const receiverBusiness = await queryOne<{ id: string; name: string; description: string | null; services: string[] | null }>(
+    `SELECT id, name, description, services FROM businesses WHERE id = $1 AND verification_status = 'verified'`,
     [receiverBusinessId]
   )
   if (!receiverBusiness) {
@@ -64,6 +66,11 @@ export async function POST(req: NextRequest) {
     [initiatorBusinessId]
   )
 
+  const initiatorAgent = await queryOne<{ name: string }>(
+    `SELECT name FROM users WHERE id = $1`,
+    [session.user.id]
+  )
+
   // Check if receiver is a demo company (no registered users)
   const receiverAdmin = await queryOne<{ email: string }>(
     `SELECT email FROM users WHERE business_id = $1 AND role = 'business_admin' LIMIT 1`,
@@ -76,14 +83,28 @@ export async function POST(req: NextRequest) {
   const [newSession] = await query<{ id: string }>(
     `INSERT INTO sessions
        (initiator_agent_id, initiator_business_id, receiver_business_id, invitation_token,
-        search_context, invitation_sent_at, status, accepted_at)
-     VALUES ($1, $2, $3, $4, $5, NOW(),
+        search_context, selected_services, invitation_sent_at, status, accepted_at)
+     VALUES ($1, $2, $3, $4, $5, $6, NOW(),
        ${isDemoReceiver ? "'active', NOW()" : "'pending', NULL"})
      RETURNING id`,
-    [session.user.id, initiatorBusinessId, receiverBusinessId, token, searchContext ?? null]
+    [session.user.id, initiatorBusinessId, receiverBusinessId, token, searchContext ?? null, selectedServices ?? []]
   )
 
-  if (!isDemoReceiver) {
+  if (isDemoReceiver) {
+    // Fire Lummy intro immediately — both sides are already "connected" in demo mode
+    const intro = await generateIntroduction({
+      businessAName: initiatorBusiness?.name ?? 'the initiating company',
+      businessADescription: initiatorBusiness?.description ?? '',
+      agentAName: initiatorAgent?.name ?? session.user.name ?? 'their representative',
+      businessBName: receiverBusiness.name,
+      businessBDescription: receiverBusiness.description ?? '',
+      agentBName: 'their team',
+      searchContext: searchContext ?? undefined,
+      selectedServices: selectedServices ?? [],
+    })
+    await putSystemMessage(newSession.id, intro, 'ai_response')
+    await query(`UPDATE sessions SET ai_introduced = true WHERE id = $1`, [newSession.id])
+  } else {
     await sendSessionInvitation({
       to: receiverAdmin!.email,
       inviterBusinessName: initiatorBusiness?.name ?? 'A business',

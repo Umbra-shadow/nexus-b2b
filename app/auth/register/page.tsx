@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, KeyboardEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Upload } from 'lucide-react'
+import { Upload, X } from 'lucide-react'
 import { RegisterBusinessSchema, RegisterUserSchema, INDUSTRIES } from '@/lib/validators'
 import { COUNTRIES } from '@/lib/constants/countries'
 import type { z } from 'zod'
@@ -59,12 +59,33 @@ export default function RegisterPage() {
   const [docFile, setDocFile] = useState<File | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [services, setServices] = useState<string[]>([])
+  const [serviceInput, setServiceInput] = useState('')
+  const serviceInputRef = useRef<HTMLInputElement>(null)
 
   const bizForm = useForm<BusinessData>({ resolver: zodResolver(RegisterBusinessSchema) })
   const userForm = useForm<UserData>({ resolver: zodResolver(RegisterUserSchema) })
 
+  function addService() {
+    const s = serviceInput.trim()
+    if (!s || services.includes(s) || services.length >= 20) return
+    setServices((prev) => [...prev, s])
+    setServiceInput('')
+  }
+
+  function handleServiceKey(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault()
+      addService()
+    }
+  }
+
+  function removeService(s: string) {
+    setServices((prev) => prev.filter((x) => x !== s))
+  }
+
   async function onBizSubmit(data: BusinessData) {
-    setBusinessData(data)
+    setBusinessData({ ...data, services })
     setStep(1)
   }
 
@@ -257,6 +278,33 @@ export default function RegisterPage() {
               <div>
                 <label style={labelStyle}>Description</label>
                 <textarea rows={3} maxLength={500} className="nx-input nx-input-sm" style={{ resize: 'none', minHeight: 'unset' }} placeholder="What does your business do? (max 500 chars)" {...bizForm.register('description')} />
+              </div>
+
+              {/* Services */}
+              <div>
+                <label style={labelStyle}>Services you offer</label>
+                <div style={{ border: '1px solid var(--nx-border)', background: 'var(--nx-raised)', padding: '8px 12px', display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', cursor: 'text' }} onClick={() => serviceInputRef.current?.focus()}>
+                  {services.map((s) => (
+                    <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', background: 'rgba(196,75,27,0.1)', border: '1px solid rgba(196,75,27,0.3)', color: '#c44b1b', padding: '3px 8px' }}>
+                      {s}
+                      <button type="button" onClick={() => removeService(s)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#c44b1b', display: 'flex', alignItems: 'center' }}>
+                        <X size={10} />
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    ref={serviceInputRef}
+                    value={serviceInput}
+                    onChange={(e) => setServiceInput(e.target.value)}
+                    onKeyDown={handleServiceKey}
+                    onBlur={addService}
+                    placeholder={services.length === 0 ? 'Type a service, press Enter or comma…' : ''}
+                    style={{ flex: 1, minWidth: 160, background: 'none', border: 'none', outline: 'none', fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--nx-fg-strong)', padding: '3px 0' }}
+                  />
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--nx-subtle)', marginTop: 4, letterSpacing: '0.06em' }}>
+                  Press Enter or comma after each service. These appear on your discovery card.
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>

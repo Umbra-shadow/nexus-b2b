@@ -66,8 +66,9 @@ export async function GET(req: NextRequest) {
     description: string | null
     logo_s3_key: string | null
     verification_status: string
+    services: string[] | null
   }>(
-    `SELECT b.id, b.name, b.slug, b.industry, b.country, b.city, b.description, b.logo_s3_key, b.verification_status
+    `SELECT b.id, b.name, b.slug, b.industry, b.country, b.city, b.description, b.logo_s3_key, b.verification_status, b.services
      FROM businesses b
      ${where}
      ORDER BY b.name ASC
@@ -79,6 +80,7 @@ export async function GET(req: NextRequest) {
     businesses.map(async (b) => ({
       ...b,
       logoUrl: b.logo_s3_key ? await getPresignedUrl(b.logo_s3_key) : null,
+      services: b.services ?? [],
     }))
   )
 

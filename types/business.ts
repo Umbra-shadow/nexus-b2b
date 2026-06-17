@@ -16,6 +16,7 @@ export interface Business {
   logoS3Key?: string | null
   logoUrl?: string | null
   verificationStatus: VerificationStatus
+  services?: string[]
   createdAt: string
 }
 
@@ -36,4 +37,5 @@ export interface BusinessSearchResult {
   description?: string | null
   logoUrl?: string | null
   verificationStatus: VerificationStatus
+  services?: string[]
 }

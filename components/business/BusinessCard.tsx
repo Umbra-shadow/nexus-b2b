@@ -1,4 +1,6 @@
-import Link from 'next/link'
+'use client'
+
+import { useState } from 'react'
 import { truncate } from '@/lib/utils'
 import type { BusinessSearchResult } from '@/types/business'
 
@@ -12,6 +14,9 @@ function getInitials(name: string) {
 }
 
 export function BusinessCard({ business, onStartSession }: BusinessCardProps) {
+  const [expanded, setExpanded] = useState(false)
+  const services = business.services ?? []
+
   return (
     <div style={{
       padding: 24,
@@ -74,6 +79,52 @@ export function BusinessCard({ business, onStartSession }: BusinessCardProps) {
         <p style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-muted)', lineHeight: 1.55, flex: 1 }}>
           {truncate(business.description, 130)}
         </p>
+      )}
+
+      {/* Services toggle */}
+      {services.length > 0 && (
+        <div>
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--nx-muted)',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <span style={{ color: '#c44b1b' }}>{expanded ? '▾' : '▸'}</span>
+            {expanded ? 'Hide services' : `${services.length} services offered`}
+          </button>
+          {expanded && (
+            <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {services.map((s) => (
+                <span
+                  key={s}
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: 8,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'var(--nx-fg)',
+                    border: '1px solid var(--nx-strong)',
+                    padding: '4px 8px',
+                  }}
+                >
+                  {s}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Actions */}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/session'
 import { query, queryOne } from '@/lib/db/aurora'
 import { putSystemMessage } from '@/lib/db/dynamo'
+import { generateIntroduction } from '@/lib/ai/v0'
 
 interface Params { params: Promise<{ token: string }> }
 
@@ -15,9 +16,15 @@ export async function POST(_req: NextRequest, { params }: Params) {
     id: string
     status: string
     receiver_business_id: string
+    initiator_business_id: string
+    initiator_agent_id: string
+    search_context: string | null
+    selected_services: string[] | null
     created_at: Date
   }>(
-    `SELECT id, status, receiver_business_id, created_at FROM sessions WHERE invitation_token = $1`,
+    `SELECT id, status, receiver_business_id, initiator_business_id, initiator_agent_id,
+            search_context, selected_services, created_at
+     FROM sessions WHERE invitation_token = $1`,
     [token]
   )
 
@@ -41,7 +48,32 @@ export async function POST(_req: NextRequest, { params }: Params) {
     [session.user.id, row.id]
   )
 
-  await putSystemMessage(row.id, 'Session accepted. Both parties are now connected.', 'system')
+  // Both parties are now connected — fire Lummy's intro
+  const [initiatorBiz, receiverBiz, initiatorAgent] = await Promise.all([
+    queryOne<{ name: string; description: string | null }>(
+      `SELECT name, description FROM businesses WHERE id = $1`, [row.initiator_business_id]
+    ),
+    queryOne<{ name: string; description: string | null }>(
+      `SELECT name, description FROM businesses WHERE id = $1`, [row.receiver_business_id]
+    ),
+    queryOne<{ name: string }>(
+      `SELECT name FROM users WHERE id = $1`, [row.initiator_agent_id]
+    ),
+  ])
+
+  const intro = await generateIntroduction({
+    businessAName: initiatorBiz?.name ?? 'the initiating company',
+    businessADescription: initiatorBiz?.description ?? '',
+    agentAName: initiatorAgent?.name ?? 'their representative',
+    businessBName: receiverBiz?.name ?? 'your company',
+    businessBDescription: receiverBiz?.description ?? '',
+    agentBName: session.user.name ?? 'their team',
+    searchContext: row.search_context ?? undefined,
+    selectedServices: row.selected_services ?? [],
+  })
+
+  await putSystemMessage(row.id, intro, 'ai_response')
+  await query(`UPDATE sessions SET ai_introduced = true WHERE id = $1`, [row.id])
 
   return NextResponse.json({ sessionId: row.id })
 }

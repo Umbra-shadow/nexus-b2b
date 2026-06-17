@@ -12,6 +12,7 @@ export const RegisterBusinessSchema = z.object({
   city: z.string().max(100).optional(),
   website: z.string().url().optional().or(z.literal('')),
   description: z.string().max(500).optional(),
+  services: z.array(z.string().min(1).max(100)).max(20).default([]),
 })
 
 export const RegisterUserSchema = z.object({
@@ -43,6 +44,7 @@ export const SearchSchema = z.object({
 export const CreateSessionSchema = z.object({
   receiverBusinessId: z.string().uuid(),
   searchContext: z.string().max(500).optional(),
+  selectedServices: z.array(z.string().min(1).max(100)).max(10).default([]),
 })
 
 export const ReceiptItemSchema = z.object({
