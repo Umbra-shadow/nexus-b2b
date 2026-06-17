@@ -9,7 +9,7 @@ export async function GET(_req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const business = await queryOne<Record<string, string | null>>(
-    `SELECT name, description, city, website,
+    `SELECT name, description, city, website, industry,
             bank_account_name, bank_account_number, bank_name, bank_swift,
             verification_status
      FROM businesses WHERE id = $1`,
@@ -52,6 +52,7 @@ export async function PATCH(req: NextRequest) {
   if (d.description !== undefined) { sets.push(`description = $${idx++}`); params.push(d.description) }
   if (d.city !== undefined) { sets.push(`city = $${idx++}`); params.push(d.city) }
   if (d.website !== undefined) { sets.push(`website = $${idx++}`); params.push(d.website || null) }
+  if (d.industry !== undefined) { sets.push(`industry = $${idx++}`); params.push(d.industry) }
 
   if (session.user.role === 'business_admin') {
     if (d.bankAccountName !== undefined) { sets.push(`bank_account_name = $${idx++}`); params.push(d.bankAccountName ? encrypt(d.bankAccountName) : null) }

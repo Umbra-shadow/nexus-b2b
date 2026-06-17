@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth/session'
 import { query, queryOne } from '@/lib/db/aurora'
 import Link from 'next/link'
 import { formatDateTime } from '@/lib/utils'
+import { DiscoverySearch } from '@/components/dashboard/DiscoverySearch'
 
 export const metadata = { title: 'Dashboard' }
 
@@ -162,14 +163,9 @@ export default async function DashboardPage() {
           <div style={{ border: '1px solid var(--nx-border)', padding: 24, backgroundImage: 'radial-gradient(ellipse at 100% 0%,rgba(196,75,27,0.07),transparent 60%)' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 14 }}>Find a partner</div>
             <p style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-muted)', lineHeight: 1.5, marginBottom: 18 }}>
-              Describe who you&apos;re looking for. Our AI matches against verified profiles.
+              Describe who you&apos;re looking for in plain language. AI matches against verified profiles.
             </p>
-            <Link href="/discovery" style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--nx-strong)', background: 'var(--nx-bg)', padding: '11px 14px', marginBottom: 14, textDecoration: 'none' }}>
-              <span style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-subtle)' }}>e.g. textile manufacturer in Portugal</span>
-            </Link>
-            <Link href="/discovery" style={{ display: 'block', textAlign: 'center', border: '1px solid #c44b1b', color: '#c44b1b', padding: 11, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', textDecoration: 'none' }}>
-              Search network →
-            </Link>
+            <DiscoverySearch />
           </div>
 
           {/* Verification status */}

@@ -109,12 +109,14 @@ export async function POST(req: NextRequest, { params }: Params) {
     const receiverBizDesc = isSenderInitiator ? sessionRow.rb_desc : sessionRow.ib_desc
     const senderBizName = isSenderInitiator ? sessionRow.ib_name : sessionRow.rb_name
 
+    const geminiKey = req.headers.get('x-gemini-key') || undefined
     const reply = await generateDemoReply(
       receiverBizName,
       receiverBizDesc ?? '',
       senderBizName,
       content,
-      sessionRow.selected_services ?? []
+      sessionRow.selected_services ?? [],
+      geminiKey
     )
 
     await putMessage({
@@ -126,11 +128,6 @@ export async function POST(req: NextRequest, { params }: Params) {
       type: 'text',
     })
 
-    await putSystemMessage(
-      id,
-      `⚠️ Demo mode: AI is representing ${receiverBizName}. In real life, a human would reply.`,
-      'system'
-    )
   }
 
   return NextResponse.json({ message: msg }, { status: 201 })

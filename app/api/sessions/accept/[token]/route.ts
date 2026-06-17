@@ -6,7 +6,7 @@ import { generateIntroduction } from '@/lib/ai/v0'
 
 interface Params { params: Promise<{ token: string }> }
 
-export async function POST(_req: NextRequest, { params }: Params) {
+export async function POST(req: NextRequest, { params }: Params) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -61,6 +61,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
     ),
   ])
 
+  const geminiKey = req.headers.get('x-gemini-key') || undefined
   const intro = await generateIntroduction({
     businessAName: initiatorBiz?.name ?? 'the initiating company',
     businessADescription: initiatorBiz?.description ?? '',
@@ -70,7 +71,7 @@ export async function POST(_req: NextRequest, { params }: Params) {
     agentBName: session.user.name ?? 'their team',
     searchContext: row.search_context ?? undefined,
     selectedServices: row.selected_services ?? [],
-  })
+  }, geminiKey)
 
   await putSystemMessage(row.id, intro, 'ai_response')
   await query(`UPDATE sessions SET ai_introduced = true WHERE id = $1`, [row.id])

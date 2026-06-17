@@ -6,6 +6,7 @@ import { Loader2, Paperclip, FileText, Landmark, Mail } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import type { ChatMessage } from '@/lib/db/dynamo'
 import type { SessionWithDetails } from '@/types/session'
+import { geminiHeaders } from '@/lib/client/gemini-key'
 
 function getInitials(name: string) {
   return name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
@@ -50,8 +51,11 @@ export default function SessionPage() {
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showReceiptModal, setShowReceiptModal] = useState(false)
-  const [rcAmount, setRcAmount] = useState('')
-  const [rcDesc, setRcDesc] = useState('')
+  const [rcItems, setRcItems] = useState<{ description: string; qty: string; unitPrice: string }[]>([{ description: '', qty: '1', unitPrice: '' }])
+  const [rcCurrency, setRcCurrency] = useState('EUR')
+  const [rcTaxRate, setRcTaxRate] = useState('')
+  const [rcNotes, setRcNotes] = useState('')
+  const [rcError, setRcError] = useState<string | null>(null)
   const [creatingReceipt, setCreatingReceipt] = useState(false)
   const [aiTyping, setAiTyping] = useState(false)
   const [showLummyPanel, setShowLummyPanel] = useState(false)
@@ -106,6 +110,18 @@ export default function SessionPage() {
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [fetchSession, fetchMessages, fetchReceipts])
 
+  // Pre-fill contact card from stored account info
+  useEffect(() => {
+    fetch('/api/account').then(r => r.ok ? r.json() : null).then(j => {
+      if (!j?.user) return
+      setContactForm({
+        name: j.user.name ?? '',
+        email: j.user.email ?? '',
+        phone: j.user.phone ?? '',
+      })
+    })
+  }, [])
+
   useEffect(() => {
     // Only scroll to bottom when a new message actually arrives — not on every poll
     if (messages.length > prevMsgCountRef.current) {
@@ -124,7 +140,7 @@ export default function SessionPage() {
     try {
       await fetch(`/api/sessions/${sessionId}/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...geminiHeaders() },
         body: JSON.stringify({ content }),
       })
       await fetchMessages()
@@ -142,7 +158,7 @@ export default function SessionPage() {
     try {
       const res = await fetch(`/api/ai/query`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...geminiHeaders() },
         body: JSON.stringify({ question, sessionId, private: true }),
       })
       const json = await res.json()
@@ -211,27 +227,42 @@ export default function SessionPage() {
   }
 
   async function createReceipt() {
-    const amt = parseFloat(rcAmount)
-    if (!amt || !rcDesc.trim()) return
+    const validItems = rcItems.filter(i => i.description.trim() && parseFloat(i.unitPrice) > 0)
+    if (validItems.length === 0) { setRcError('Add at least one line item with a description and price.'); return }
     setCreatingReceipt(true)
+    setRcError(null)
     try {
+      const taxRate = rcTaxRate ? Math.min(1, parseFloat(rcTaxRate) / 100) : 0
       const res = await fetch('/api/receipts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionId,
-          items: [{ description: rcDesc.trim(), qty: 1, unitPrice: amt }],
-          currency: 'EUR',
-          taxRate: 0,
-          notes: null,
+          items: validItems.map(i => ({
+            description: i.description.trim(),
+            qty: Math.max(1, parseFloat(i.qty) || 1),
+            unitPrice: parseFloat(i.unitPrice),
+          })),
+          currency: rcCurrency,
+          taxRate,
+          notes: rcNotes.trim() || null,
         }),
       })
       if (res.ok) {
         setShowReceiptModal(false)
-        setRcAmount('')
-        setRcDesc('')
+        setRcItems([{ description: '', qty: '1', unitPrice: '' }])
+        setRcCurrency('EUR')
+        setRcTaxRate('')
+        setRcNotes('')
+        setRcError(null)
         await Promise.all([fetchMessages(), fetchReceipts()])
+      } else {
+        const j = await res.json().catch(() => ({}))
+        setRcError(j.error ?? `Server error (${res.status}). Please try again.`)
       }
+    } catch (err) {
+      setRcError('Network error. Please check your connection.')
+      console.error('createReceipt error:', err)
     } finally {
       setCreatingReceipt(false)
     }
@@ -301,7 +332,7 @@ export default function SessionPage() {
           {!closed && (
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexShrink: 0 }}>
               <button
-                onClick={() => setShowReceiptModal(true)}
+                onClick={() => { setRcError(null); setShowReceiptModal(true) }}
                 style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#ffffff', background: '#c44b1b', padding: '10px 16px', border: 'none', cursor: 'pointer' }}
               >
                 ＋ Receipt
@@ -323,9 +354,9 @@ export default function SessionPage() {
 
         {/* Demo banner */}
         {isDemo && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 28px', background: 'rgba(122,90,176,0.08)', borderBottom: '1px solid #2a2040', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 28px', background: 'rgba(107,79,160,0.07)', borderBottom: '1px solid rgba(107,79,160,0.25)', flexShrink: 0 }}>
             <span style={{ width: 6, height: 6, borderRadius: 9999, background: '#7a5ab0', display: 'inline-block', animation: 'nx-dot 1.6s infinite' }} />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', color: '#a98fd0', textTransform: 'uppercase' }}>AI Demo Mode — this is a fictional business; replies are AI-generated</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', color: '#6b4fa0', textTransform: 'uppercase' }}>AI Demo Mode — this is a fictional business; replies are AI-generated</span>
           </div>
         )}
 
@@ -348,11 +379,11 @@ export default function SessionPage() {
             // AI intro box (purple-bordered)
             if (isAI) {
               return (
-                <div key={msg.message_id} style={{ border: '1px solid #2a2040', background: 'rgba(122,90,176,0.06)', padding: '18px 20px', margin: '4px 0' }}>
+                <div key={msg.message_id} style={{ border: '1px solid rgba(107,79,160,0.3)', background: 'rgba(107,79,160,0.05)', padding: '18px 20px', margin: '4px 0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#a98fd0' }}>◇ NexusB2B AI · Introduction</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#6b4fa0' }}>◇ NexusB2B AI · Introduction</span>
                   </div>
-                  <p style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg)', lineHeight: 1.6, margin: 0 }}>{msg.content}</p>
+                  <p style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--nx-fg)', lineHeight: 1.65, margin: 0 }}>{msg.content}</p>
                 </div>
               )
             }
@@ -369,11 +400,11 @@ export default function SessionPage() {
             // Lummy AI assistant
             if (isLummy) {
               return (
-                <div key={msg.message_id} style={{ alignSelf: 'flex-start', maxWidth: '82%', border: '1px solid #4a3a6a', background: 'rgba(122,90,176,0.10)', padding: '14px 18px' }}>
+                <div key={msg.message_id} style={{ alignSelf: 'flex-start', maxWidth: '82%', border: '1px solid rgba(107,79,160,0.35)', background: 'rgba(107,79,160,0.06)', padding: '14px 18px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#a98fd0' }}>✦ Lummy · AI assistant</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#6b4fa0' }}>✦ Lummy · AI assistant</span>
                   </div>
-                  <p style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg-bright)', lineHeight: 1.55, margin: 0 }}>{msg.content}</p>
+                  <p style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--nx-fg-strong)', lineHeight: 1.65, margin: 0 }}>{msg.content}</p>
                 </div>
               )
             }
@@ -445,29 +476,47 @@ export default function SessionPage() {
             if (isOwn) {
               return (
                 <div key={msg.message_id} style={{ alignSelf: 'flex-end', maxWidth: '74%' }}>
-                  <div style={{ background: '#c44b1b', color: '#ffffff', padding: '13px 17px', fontFamily: 'var(--font-serif)', fontSize: 16, lineHeight: 1.5 }}>{msg.content}</div>
+                  <div style={{ background: '#c44b1b', color: '#ffffff', padding: '13px 17px', fontFamily: 'var(--font-serif)', fontSize: 16, lineHeight: 1.65, wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}>{msg.content}</div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--nx-subtle)', textAlign: 'right', marginTop: 5 }}>You · {formatTime(msg.created_at ?? '')}</div>
                 </div>
               )
             }
 
             // Counterpart messages (left, raised bg)
+            const isDemo = msg.sender_id?.startsWith('demo:')
             return (
               <div key={msg.message_id} style={{ alignSelf: 'flex-start', maxWidth: '74%' }}>
-                <div style={{ background: 'var(--nx-raised)', border: '1px solid var(--nx-border)', color: 'var(--nx-fg-bright)', padding: '13px 17px', fontFamily: 'var(--font-serif)', fontSize: 16, lineHeight: 1.5 }}>{msg.content}</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--nx-subtle)', marginTop: 5 }}>
-                  {msg.sender_name ?? theirBusiness.name} · {formatTime(msg.created_at ?? '')}
-                  {(msg.sender_id?.startsWith('demo:')) && <span style={{ color: '#7a5ab0' }}> · AI</span>}
+                <div style={{
+                  background: isDemo ? 'rgba(107,79,160,0.05)' : 'var(--nx-raised)',
+                  border: `1px solid ${isDemo ? 'rgba(107,79,160,0.25)' : 'var(--nx-border)'}`,
+                  color: 'var(--nx-fg-strong)',
+                  padding: '13px 17px',
+                  fontFamily: 'var(--font-serif)',
+                  fontSize: 16,
+                  lineHeight: 1.65,
+                  wordBreak: 'break-word',
+                  overflowWrap: 'break-word',
+                  whiteSpace: 'pre-wrap',
+                }}>
+                  {msg.content}
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--nx-subtle)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>{msg.sender_name ?? theirBusiness.name} · {formatTime(msg.created_at ?? '')}</span>
+                  {isDemo && (
+                    <span style={{ color: '#6b4fa0', border: '1px solid rgba(107,79,160,0.4)', padding: '1px 5px', fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                      AI · Demo
+                    </span>
+                  )}
                 </div>
               </div>
             )
           })}
 
           {aiTyping && (
-            <div style={{ alignSelf: 'flex-start', border: '1px solid #4a3a6a', background: 'rgba(122,90,176,0.10)', padding: '14px 18px' }}>
+            <div style={{ alignSelf: 'flex-start', border: '1px solid rgba(107,79,160,0.35)', background: 'rgba(107,79,160,0.07)', padding: '14px 18px' }}>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 {[0, 0.2, 0.4].map((d, i) => (
-                  <span key={i} style={{ width: 6, height: 6, borderRadius: 9999, background: '#a98fd0', display: 'inline-block', animation: `nx-dot 1.4s ${d}s infinite` }} />
+                  <span key={i} style={{ width: 6, height: 6, borderRadius: 9999, background: '#7a5ab0', display: 'inline-block', animation: `nx-dot 1.4s ${d}s infinite` }} />
                 ))}
               </div>
             </div>
@@ -484,7 +533,7 @@ export default function SessionPage() {
               type="button"
               onClick={() => setShowLummyPanel(true)}
               title="Open Lummy AI assistant"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#a98fd0', border: '1px solid #4a3a6a', background: 'rgba(122,90,176,0.12)', padding: '13px 15px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, minHeight: 48 }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6b4fa0', border: '1px solid rgba(107,79,160,0.4)', background: 'rgba(107,79,160,0.08)', padding: '13px 15px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, minHeight: 48 }}
             >
               ✦ Ask Lummy
             </button>
@@ -527,7 +576,25 @@ export default function SessionPage() {
                     </div>
                   </button>
                   <button
-                    onClick={() => { setShowAttachMenu(false); setShowBankModal(true) }}
+                    onClick={async () => {
+                      setShowAttachMenu(false)
+                      try {
+                        const res = await fetch('/api/businesses/me')
+                        if (res.ok) {
+                          const j = await res.json()
+                          const b = j.business
+                          if (b) {
+                            setBankForm({
+                              bankName: b.bank_name ?? '',
+                              accountName: b.bank_account_name ?? '',
+                              iban: b.bank_account_number ?? '',
+                              swift: b.bank_swift ?? '',
+                            })
+                          }
+                        }
+                      } catch { /* ignore */ }
+                      setShowBankModal(true)
+                    }}
                     style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '13px 16px', background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px solid var(--nx-border)', textAlign: 'left' }}
                   >
                     <Landmark size={14} style={{ color: '#3a6a4a', flexShrink: 0 }} />
@@ -576,16 +643,60 @@ export default function SessionPage() {
 
       {/* Right rail */}
       <div style={{ width: 300, flexShrink: 0, overflowY: 'auto', padding: 24 }}>
-        {/* Session info */}
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nx-fg)', marginBottom: 16 }}>Session</div>
+        {/* Counterpart card */}
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nx-fg)', marginBottom: 14 }}>Counterpart</div>
         <div style={{ border: '1px solid var(--nx-border)', padding: 18, marginBottom: 20 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 6 }}>Counterpart</div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--nx-fg-strong)', marginBottom: 14 }}>{theirBusiness.name}</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 6 }}>Status</div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: sxStatusColor, marginBottom: 14, textTransform: 'capitalize' }}>{session.status}</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 6 }}>Opened by</div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg)' }}>{openedBy}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <div style={{ width: 34, height: 34, border: '1px solid var(--nx-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontSize: 14, color: 'var(--nx-fg-strong)', flexShrink: 0 }}>
+              {getInitials(theirBusiness.name)}
+            </div>
+            <div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg-strong)', lineHeight: 1.2 }}>{theirBusiness.name}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginTop: 3 }}>
+                {theirBusiness.industry}{theirBusiness.country ? ` · ${theirBusiness.country}` : ''}{(theirBusiness as { city?: string | null }).city ? ` · ${(theirBusiness as { city?: string | null }).city}` : ''}
+              </div>
+            </div>
+          </div>
+
+          {(theirBusiness as { description?: string | null }).description && (
+            <p style={{ fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--nx-muted)', lineHeight: 1.5, margin: '0 0 12px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+              {(theirBusiness as { description?: string | null }).description}
+            </p>
+          )}
+
+          {(theirBusiness as { website?: string | null }).website && (
+            <a
+              href={(theirBusiness as { website?: string | null }).website!}
+              target="_blank" rel="noopener noreferrer"
+              style={{ display: 'inline-block', fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: '#c44b1b', textDecoration: 'none', marginBottom: 12 }}
+            >
+              ↗ {(theirBusiness as { website?: string | null }).website!.replace(/^https?:\/\/(www\.)?/, '')}
+            </a>
+          )}
+
+          <div style={{ borderTop: '1px solid var(--nx-line)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--nx-muted)' }}>Status</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: sxStatusColor, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{session.status}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--nx-muted)', flexShrink: 0 }}>Opened by</span>
+              <span style={{ fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--nx-fg)', textAlign: 'right' }}>{openedBy}</span>
+            </div>
+          </div>
         </div>
+
+        {/* Services selected for this session */}
+        {(session as { selectedServices?: string[] }).selectedServices?.length ? (
+          <>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nx-fg)', marginBottom: 10 }}>Session focus</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
+              {(session as { selectedServices?: string[] }).selectedServices!.map((s) => (
+                <span key={s} style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#c44b1b', border: '1px solid rgba(196,75,27,0.4)', padding: '3px 8px' }}>{s}</span>
+              ))}
+            </div>
+          </>
+        ) : null}
 
         {/* Receipts in this room */}
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nx-fg)', marginBottom: 14 }}>Receipts in this room</div>
@@ -694,11 +805,11 @@ export default function SessionPage() {
 
       {/* Lummy private research panel — floats in corner, chat stays fully interactive */}
       {showLummyPanel && (
-        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 60, width: 420, maxWidth: 'calc(100vw - 48px)', background: 'var(--nx-panel)', border: '1px solid #4a3a6a', display: 'flex', flexDirection: 'column', height: 480, boxShadow: '0 24px 80px rgba(0,0,0,0.6)' }}>
+        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 60, width: 420, maxWidth: 'calc(100vw - 48px)', background: 'var(--nx-panel)', border: '1px solid rgba(107,79,160,0.4)', display: 'flex', flexDirection: 'column', height: 480, boxShadow: '0 24px 80px rgba(0,0,0,0.2)' }}>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #2a2040', background: 'rgba(122,90,176,0.08)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid rgba(107,79,160,0.2)', background: 'rgba(107,79,160,0.06)', flexShrink: 0 }}>
               <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#a98fd0' }}>✦ Lummy · Private research</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#6b4fa0' }}>✦ Lummy · Private research</div>
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 12, color: 'var(--nx-muted)', marginTop: 3 }}>Ask anything — this stays private, not in the session chat.</div>
               </div>
               <button onClick={() => setShowLummyPanel(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--nx-muted)', fontSize: 18, lineHeight: 1, padding: 4 }}>✕</button>
@@ -714,38 +825,38 @@ export default function SessionPage() {
               {lummyMessages.map((m, i) => (
                 <div key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '90%' }}>
                   {m.role === 'user' ? (
-                    <div style={{ background: '#c44b1b', color: '#fff', padding: '10px 14px', fontFamily: 'var(--font-serif)', fontSize: 14, lineHeight: 1.5 }}>{m.text}</div>
+                    <div style={{ background: '#c44b1b', color: '#fff', padding: '10px 14px', fontFamily: 'var(--font-serif)', fontSize: 15, lineHeight: 1.6 }}>{m.text}</div>
                   ) : (
-                    <div style={{ border: '1px solid #4a3a6a', background: 'rgba(122,90,176,0.10)', padding: '12px 16px' }}>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#a98fd0', marginBottom: 8 }}>✦ Lummy</div>
-                      <p style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-fg-bright)', lineHeight: 1.6, margin: 0 }}>{m.text}</p>
+                    <div style={{ border: '1px solid rgba(107,79,160,0.35)', background: 'rgba(107,79,160,0.07)', padding: '12px 16px' }}>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#6b4fa0', marginBottom: 8 }}>✦ Lummy</div>
+                      <p style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg-strong)', lineHeight: 1.65, margin: 0 }}>{m.text}</p>
                     </div>
                   )}
                 </div>
               ))}
               {lummyLoading && (
-                <div style={{ alignSelf: 'flex-start', border: '1px solid #4a3a6a', background: 'rgba(122,90,176,0.08)', padding: '12px 16px' }}>
+                <div style={{ alignSelf: 'flex-start', border: '1px solid rgba(107,79,160,0.35)', background: 'rgba(107,79,160,0.07)', padding: '12px 16px' }}>
                   <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-                    {[0, 0.2, 0.4].map((d, i) => <span key={i} style={{ width: 5, height: 5, borderRadius: 9999, background: '#a98fd0', display: 'inline-block', animation: `nx-dot 1.4s ${d}s infinite` }} />)}
+                    {[0, 0.2, 0.4].map((d, i) => <span key={i} style={{ width: 5, height: 5, borderRadius: 9999, background: '#7a5ab0', display: 'inline-block', animation: `nx-dot 1.4s ${d}s infinite` }} />)}
                   </div>
                 </div>
               )}
             </div>
 
             {/* Input */}
-            <div style={{ borderTop: '1px solid #2a2040', padding: '12px 16px', display: 'flex', gap: 10, flexShrink: 0 }}>
+            <div style={{ borderTop: '1px solid rgba(107,79,160,0.2)', padding: '12px 16px', display: 'flex', gap: 10, flexShrink: 0 }}>
               <input
                 value={lummyInput}
                 onChange={(e) => setLummyInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendToLummy() } }}
                 placeholder="What's the average price for…"
                 disabled={lummyLoading}
-                style={{ flex: 1, background: 'var(--nx-raised)', border: '1px solid #4a3a6a', padding: '11px 14px', fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-fg-strong)', outline: 'none' }}
+                style={{ flex: 1, background: 'var(--nx-raised)', border: '1px solid rgba(107,79,160,0.35)', padding: '11px 14px', fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg-strong)', outline: 'none' }}
               />
               <button
                 onClick={sendToLummy}
                 disabled={lummyLoading || !lummyInput.trim()}
-                style={{ background: '#a98fd0', color: '#fff', border: 'none', padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', cursor: (lummyLoading || !lummyInput.trim()) ? 'not-allowed' : 'pointer', opacity: (lummyLoading || !lummyInput.trim()) ? 0.5 : 1 }}
+                style={{ background: '#7a5ab0', color: '#fff', border: 'none', padding: '11px 16px', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', cursor: (lummyLoading || !lummyInput.trim()) ? 'not-allowed' : 'pointer', opacity: (lummyLoading || !lummyInput.trim()) ? 0.5 : 1 }}
               >
                 Ask →
               </button>
@@ -754,51 +865,116 @@ export default function SessionPage() {
       )}
 
       {/* Receipt modal */}
-      {showReceiptModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 24 }}>
-          <div style={{ width: 480, maxWidth: '100%', background: 'var(--nx-panel)', border: '1px solid var(--nx-strong)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--nx-border)' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#c44b1b' }}>New receipt</span>
-              <button onClick={() => setShowReceiptModal(false)} style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--nx-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>✕</button>
-            </div>
-            <div style={{ padding: 24 }}>
-              <p style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-muted)', lineHeight: 1.5, marginBottom: 20 }}>
-                To <strong style={{ color: 'var(--nx-fg-strong)' }}>{theirBusiness.name}</strong>. Payment details are pulled from your stored banking info and shown on the receipt.
-              </p>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 8 }}>Amount (EUR)</div>
-              <input
-                value={rcAmount}
-                onChange={(e) => setRcAmount(e.target.value)}
-                placeholder="48500"
-                type="number"
-                style={{ width: '100%', background: 'var(--nx-raised)', border: '1px solid var(--nx-border)', padding: '13px 15px', fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--nx-fg-strong)', marginBottom: 18, outline: 'none' }}
-              />
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 8 }}>Description</div>
-              <textarea
-                value={rcDesc}
-                onChange={(e) => setRcDesc(e.target.value)}
-                placeholder="What is this for?"
-                style={{ width: '100%', background: 'var(--nx-raised)', border: '1px solid var(--nx-border)', padding: '13px 15px', fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg-strong)', minHeight: 72, resize: 'vertical', marginBottom: 22, outline: 'none' }}
-              />
-              <div style={{ display: 'flex', gap: 12 }}>
-                <button
-                  onClick={() => setShowReceiptModal(false)}
-                  style={{ flex: 1, textAlign: 'center', border: '1px solid var(--nx-strong)', color: 'var(--nx-fg)', padding: 13, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: 'pointer', background: 'none' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={createReceipt}
-                  disabled={creatingReceipt || !rcAmount || !rcDesc.trim()}
-                  style={{ flex: 1, textAlign: 'center', background: '#c44b1b', color: '#ffffff', padding: 13, fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: creatingReceipt ? 'not-allowed' : 'pointer', border: 'none', opacity: creatingReceipt ? 0.7 : 1 }}
-                >
-                  {creatingReceipt ? 'Creating…' : 'Create & share →'}
-                </button>
+      {showReceiptModal && (() => {
+        const taxPct = parseFloat(rcTaxRate) || 0
+        const subtotal = rcItems.reduce((s, i) => s + (parseFloat(i.qty)||1) * (parseFloat(i.unitPrice)||0), 0)
+        const tax = subtotal * taxPct / 100
+        const total = subtotal + tax
+        const fmt = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        const CURRENCIES = ['EUR', 'USD', 'GBP', 'KES', 'NGN', 'ZAR', 'CHF', 'JPY']
+        const inputStyle: React.CSSProperties = { background: 'var(--nx-raised)', border: '1px solid var(--nx-border)', padding: '10px 12px', fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-fg-strong)', outline: 'none', width: '100%' }
+        const monoLabel: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 7 }
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 24 }}>
+            <div style={{ width: 580, maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', background: 'var(--nx-panel)', border: '1px solid var(--nx-strong)' }}>
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid var(--nx-border)', position: 'sticky', top: 0, background: 'var(--nx-panel)', zIndex: 1 }}>
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#c44b1b' }}>New receipt</div>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--nx-muted)', marginTop: 2 }}>To {theirBusiness.name}</div>
+                </div>
+                <button onClick={() => setShowReceiptModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--nx-muted)', fontSize: 16, padding: 4 }}>✕</button>
+              </div>
+
+              <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {/* Currency */}
+                <div>
+                  <div style={monoLabel}>Currency</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {CURRENCIES.map(c => (
+                      <button key={c} onClick={() => setRcCurrency(c)} style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', padding: '7px 14px', border: `1px solid ${rcCurrency === c ? '#c44b1b' : 'var(--nx-border)'}`, background: rcCurrency === c ? '#c44b1b' : 'transparent', color: rcCurrency === c ? '#fff' : 'var(--nx-fg)', cursor: 'pointer' }}>{c}</button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Line items */}
+                <div>
+                  <div style={monoLabel}>Line items</div>
+                  {/* Column headers */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 64px 96px 80px 28px', gap: 6, marginBottom: 6 }}>
+                    {['Description', 'Qty', 'Unit price', 'Total', ''].map(h => (
+                      <div key={h} style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-subtle)', textAlign: h === 'Description' ? 'left' : 'right' }}>{h}</div>
+                    ))}
+                  </div>
+                  {rcItems.map((item, i) => {
+                    const itemTotal = (parseFloat(item.qty)||1) * (parseFloat(item.unitPrice)||0)
+                    return (
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 64px 96px 80px 28px', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+                        <input value={item.description} onChange={e => setRcItems(prev => prev.map((it, j) => j===i ? { ...it, description: e.target.value } : it))} placeholder="Service / product description" style={{ ...inputStyle }} />
+                        <input value={item.qty} onChange={e => setRcItems(prev => prev.map((it, j) => j===i ? { ...it, qty: e.target.value } : it))} type="number" min="1" step="1" placeholder="1" style={{ ...inputStyle, textAlign: 'right', padding: '10px 8px' }} />
+                        <input value={item.unitPrice} onChange={e => setRcItems(prev => prev.map((it, j) => j===i ? { ...it, unitPrice: e.target.value } : it))} type="number" min="0" step="0.01" placeholder="0.00" style={{ ...inputStyle, textAlign: 'right', padding: '10px 8px' }} />
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--nx-fg-strong)', textAlign: 'right' }}>{fmt(itemTotal)}</div>
+                        {rcItems.length > 1 ? (
+                          <button onClick={() => setRcItems(prev => prev.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--nx-subtle)', fontSize: 14, padding: 0, textAlign: 'center' }}>✕</button>
+                        ) : <div />}
+                      </div>
+                    )
+                  })}
+                  <button onClick={() => setRcItems(prev => [...prev, { description: '', qty: '1', unitPrice: '' }])} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c44b1b', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 4 }}>＋ Add line item</button>
+                </div>
+
+                {/* Tax + Notes row */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div>
+                    <div style={monoLabel}>Tax rate (%)</div>
+                    <input value={rcTaxRate} onChange={e => setRcTaxRate(e.target.value)} type="number" min="0" max="100" step="0.1" placeholder="0" style={inputStyle} />
+                  </div>
+                  <div>
+                    <div style={monoLabel}>Notes (optional)</div>
+                    <input value={rcNotes} onChange={e => setRcNotes(e.target.value)} placeholder="Payment terms, PO number, etc." style={inputStyle} />
+                  </div>
+                </div>
+
+                {/* Totals */}
+                <div style={{ borderTop: '1px solid var(--nx-border)', paddingTop: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{ width: 260, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--nx-muted)' }}>Subtotal</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--nx-fg)' }}>{rcCurrency} {fmt(subtotal)}</span>
+                      </div>
+                      {taxPct > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--nx-muted)' }}>Tax ({taxPct}%)</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--nx-fg)' }}>{rcCurrency} {fmt(tax)}</span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--nx-border)', paddingTop: 8 }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--nx-fg-strong)' }}>Total</span>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--nx-fg-strong)', lineHeight: 1 }}>{rcCurrency} {fmt(total)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {rcError && (
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#c44b1b', border: '1px solid #7a2a0c', padding: '10px 14px' }}>
+                    {rcError}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button onClick={() => setShowReceiptModal(false)} style={{ flex: 1, padding: 13, border: '1px solid var(--nx-strong)', background: 'none', color: 'var(--nx-fg)', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: 'pointer' }}>Cancel</button>
+                  <button onClick={createReceipt} disabled={creatingReceipt} style={{ flex: 2, padding: 13, background: '#c44b1b', color: '#fff', border: 'none', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: creatingReceipt ? 'not-allowed' : 'pointer', opacity: creatingReceipt ? 0.7 : 1 }}>
+                    {creatingReceipt ? 'Creating…' : 'Create & share →'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

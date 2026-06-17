@@ -23,6 +23,7 @@ export async function GET(_req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  try {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -91,4 +92,9 @@ export async function POST(req: NextRequest) {
   })
 
   return NextResponse.json({ receiptId: receipt.id }, { status: 201 })
+  } catch (err) {
+    console.error('[receipts POST]', err)
+    const msg = err instanceof Error ? err.message : 'Internal server error'
+    return NextResponse.json({ error: msg }, { status: 500 })
+  }
 }

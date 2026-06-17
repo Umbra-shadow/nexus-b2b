@@ -59,7 +59,8 @@ export default async function ReceiptPage({ params }: Props) {
   }
 
   const isReceiver = receipt.receiver_id === uid
-  const items: { description: string; qty: number; unitPrice: number; total: number }[] = JSON.parse(receipt.items)
+  const items: { description: string; qty: number; unitPrice: number; total: number }[] =
+    typeof receipt.items === 'string' ? JSON.parse(receipt.items) : receipt.items
   const sc = STATUS_STYLE[receipt.status] ?? STATUS_STYLE.draft
 
   const bankDetails = isReceiver && receipt.bank_account_number
@@ -184,22 +185,42 @@ export default async function ReceiptPage({ params }: Props) {
         )}
 
         {/* Actions */}
-        <div style={{ padding: '20px 28px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ padding: '20px 28px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <Link
             href={`/sessions/${receipt.session_id}`}
             style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-fg)', border: '1px solid var(--nx-border)', padding: '12px 20px', textDecoration: 'none' }}
           >
-            View session →
+            ← Back to session
           </Link>
+
+          {/* Issuer: resend notification */}
+          {!isReceiver && receipt.status === 'sent' && (
+            <form action={`/api/receipts/${id}/resend`} method="POST">
+              <button
+                type="submit"
+                style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-fg)', background: 'none', border: '1px solid var(--nx-strong)', padding: '12px 20px', cursor: 'pointer' }}
+              >
+                Resend →
+              </button>
+            </form>
+          )}
+
+          {/* Receiver: acknowledge = mark as completed */}
           {isReceiver && receipt.status === 'sent' && (
             <form action={`/api/receipts/${id}/acknowledge`} method="POST">
               <button
                 type="submit"
                 style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#ffffff', background: '#c44b1b', border: 'none', padding: '12px 20px', cursor: 'pointer' }}
               >
-                Acknowledge receipt
+                Mark as completed ✓
               </button>
             </form>
+          )}
+
+          {receipt.status === 'acknowledged' && (
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#5a9a7a', border: '1px solid #274a3a', padding: '12px 16px' }}>
+              ✓ Completed
+            </span>
           )}
         </div>
       </div>

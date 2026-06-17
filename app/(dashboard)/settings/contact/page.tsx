@@ -37,12 +37,8 @@ export default function ContactPage() {
   }
 
   return (
-    <div style={{ padding: '28px 20px', maxWidth: 760, animation: 'nx-rise 0.4s ease' }}>
-      <div style={{ marginBottom: 36 }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 10 }}>/ Settings / Contact</div>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 52, lineHeight: 0.9, color: 'var(--nx-fg-strong)', marginBottom: 12 }}>CONTACT</h1>
-        <p style={{ fontFamily: 'var(--font-serif)', fontSize: 17, color: 'var(--nx-muted)' }}>Get in touch with the NexusB2B team.</p>
-      </div>
+    <div>
+      <p style={{ fontFamily: 'var(--font-serif)', fontSize: 17, color: 'var(--nx-muted)', marginBottom: 32 }}>Get in touch with the NexusB2B team.</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, border: '1px solid var(--nx-border)', marginBottom: 32 }}>
         <div style={{ padding: '20px 24px', borderRight: '1px solid var(--nx-border)' }}>

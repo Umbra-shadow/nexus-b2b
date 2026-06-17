@@ -31,7 +31,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const answer = await answerQuery(question)
+  const geminiKey = req.headers.get('x-gemini-key') || undefined
+  const answer = await answerQuery(question, geminiKey)
 
   // Only write to chat when not private (private = Lummy panel, stays out of the conversation)
   if (!isPrivate) {

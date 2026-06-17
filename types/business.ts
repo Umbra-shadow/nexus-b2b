@@ -35,6 +35,7 @@ export interface BusinessSearchResult {
   country: string
   city?: string | null
   description?: string | null
+  website?: string | null
   logoUrl?: string | null
   verificationStatus: VerificationStatus
   services?: string[]

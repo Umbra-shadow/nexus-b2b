@@ -1,16 +1,18 @@
 import type { Metadata } from 'next'
-import { Bebas_Neue, Crimson_Pro, JetBrains_Mono } from 'next/font/google'
+import { Playfair_Display, Inter } from 'next/font/google'
 import { Providers } from '@/components/layout/Providers'
 import './globals.css'
 
-const bebasNeue = Bebas_Neue({
+// Headline weight — Didone Black for the large editorial headings
+const playfairBlack = Playfair_Display({
   subsets: ['latin'],
-  weight: ['400'],
+  weight: ['900'],
   variable: '--font-display',
   display: 'swap',
 })
 
-const crimsonPro = Crimson_Pro({
+// Body serif — Playfair Display regular/medium for readable text
+const playfairBody = Playfair_Display({
   subsets: ['latin'],
   weight: ['400', '500', '600'],
   style: ['normal', 'italic'],
@@ -18,7 +20,8 @@ const crimsonPro = Crimson_Pro({
   display: 'swap',
 })
 
-const jetbrainsMono = JetBrains_Mono({
+// Label / UI sans-serif — Inter replaces JetBrains Mono
+const inter = Inter({
   subsets: ['latin'],
   weight: ['400', '500'],
   variable: '--font-mono',
@@ -39,10 +42,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-theme="light" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`${bebasNeue.variable} ${crimsonPro.variable} ${jetbrainsMono.variable}`}
+        className={`${playfairBlack.variable} ${playfairBody.variable} ${inter.variable}`}
       >
         <Providers>{children}</Providers>
       </body>

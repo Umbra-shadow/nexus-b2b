@@ -92,6 +92,7 @@ export async function POST(req: NextRequest) {
 
   if (isDemoReceiver) {
     // Fire Lummy intro immediately — both sides are already "connected" in demo mode
+    const geminiKey = req.headers.get('x-gemini-key') || undefined
     const intro = await generateIntroduction({
       businessAName: initiatorBusiness?.name ?? 'the initiating company',
       businessADescription: initiatorBusiness?.description ?? '',
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
       agentBName: 'their team',
       searchContext: searchContext ?? undefined,
       selectedServices: selectedServices ?? [],
-    })
+    }, geminiKey)
     await putSystemMessage(newSession.id, intro, 'ai_response')
     await query(`UPDATE sessions SET ai_introduced = true WHERE id = $1`, [newSession.id])
   } else {

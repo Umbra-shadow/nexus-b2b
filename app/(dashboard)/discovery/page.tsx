@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useTransition, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2, X } from 'lucide-react'
 import { BusinessCard } from '@/components/business/BusinessCard'
 import type { BusinessSearchResult } from '@/types/business'
+import { geminiHeaders } from '@/lib/client/gemini-key'
 
 const INDUSTRY_CHIPS = [
   'All',
@@ -27,12 +28,16 @@ const INDUSTRY_CHIPS = [
 
 const MAX_SERVICES = 3
 
-export default function DiscoveryPage() {
+function DiscoveryPageInner() {
   const router = useRouter()
-  const [searchQuery, setSearchQuery] = useState('')
+  const searchParams = useSearchParams()
+  const initialQ = searchParams.get('q') ?? ''
+
+  const [searchQuery, setSearchQuery] = useState(initialQ)
   const [industry, setIndustry] = useState('All')
   const [results, setResults] = useState<BusinessSearchResult[]>([])
   const [total, setTotal] = useState(0)
+  const [fallbackNote, setFallbackNote] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   // Service-selection modal state
@@ -45,14 +50,15 @@ export default function DiscoveryPage() {
       const params = new URLSearchParams()
       if (q.trim()) params.set('q', q.trim())
       if (ind && ind !== 'All') params.set('industry', ind.toLowerCase())
-      const res = await fetch(`/api/businesses?${params}`)
+      const res = await fetch(`/api/businesses?${params}`, { headers: geminiHeaders() })
       const json = await res.json()
       setResults(json.businesses ?? [])
       setTotal(json.businesses?.length ?? 0)
+      setFallbackNote(json.fallbackNote ?? null)
     })
   }
 
-  useEffect(() => { fetchBusinesses('', 'All') }, [])
+  useEffect(() => { fetchBusinesses(initialQ, 'All') }, [])
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -84,7 +90,7 @@ export default function DiscoveryPage() {
     setStarting(true)
     const res = await fetch('/api/sessions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...geminiHeaders() },
       body: JSON.stringify({
         receiverBusinessId: pendingBusiness.id,
         searchContext: searchQuery || undefined,
@@ -163,10 +169,16 @@ export default function DiscoveryPage() {
         })}
       </div>
 
-      {/* Result count */}
+      {/* Result count + fallback note */}
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--nx-muted)', borderBottom: '1px solid var(--nx-border)', paddingBottom: 12, marginBottom: 0 }}>
-        {total} verified results
+        {total} verified result{total !== 1 ? 's' : ''}
       </div>
+
+      {fallbackNote && (
+        <div style={{ borderLeft: '2px solid #c44b1b', paddingLeft: 14, marginTop: 16, marginBottom: 4, fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-muted)', lineHeight: 1.5 }}>
+          {fallbackNote}
+        </div>
+      )}
 
       {/* Results grid */}
       {isPending ? (
@@ -176,7 +188,7 @@ export default function DiscoveryPage() {
         </div>
       ) : results.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 0' }}>
-          <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--nx-muted)' }}>No businesses found. Try a different search.</p>
+          <p style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--nx-muted)' }}>No businesses found matching your search.</p>
         </div>
       ) : (
         <div className="nx-discovery-grid">
@@ -278,5 +290,13 @@ export default function DiscoveryPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function DiscoveryPage() {
+  return (
+    <Suspense>
+      <DiscoveryPageInner />
+    </Suspense>
   )
 }

@@ -5,21 +5,16 @@ import { DemoIntroModal } from './DemoIntroModal'
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--nx-bg)' }}>
+    <div style={{ display: 'flex', height: '100vh', background: 'var(--nx-bg)', overflow: 'hidden' }}>
       <DemoIntroModal />
       <Sidebar />
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, paddingBottom: 64 }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
         <TopBar />
-        <div style={{ flex: 1, overflow: 'auto' }}>
+        <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
           {children}
         </div>
       </main>
       <BottomNav />
-      <style>{`
-        @media (min-width: 1024px) {
-          main { padding-bottom: 0; }
-        }
-      `}</style>
     </div>
   )
 }

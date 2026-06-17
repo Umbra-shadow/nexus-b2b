@@ -29,10 +29,10 @@ const PREVIEW_BUSINESSES = [
 ]
 
 export default function LandingPage() {
-  const [theme, setTheme] = useState('dark')
+  const [theme, setTheme] = useState('light')
 
   useEffect(() => {
-    const saved = localStorage.getItem('nx-theme') || 'dark'
+    const saved = localStorage.getItem('nx-theme') || 'light'
     setTheme(saved)
     document.documentElement.setAttribute('data-theme', saved)
   }, [])

@@ -36,6 +36,15 @@ export async function POST(req: NextRequest) {
 
   const { name, email, role } = parsed.data
 
+  // Check for existing email first to return a clear error
+  const existing = await query<{ id: string }>(
+    `SELECT id FROM users WHERE email = $1`,
+    [email]
+  )
+  if (existing.length > 0) {
+    return NextResponse.json({ error: 'A user with this email already exists.' }, { status: 409 })
+  }
+
   const placeholder = await bcrypt.hash(require('crypto').randomBytes(32).toString('hex'), 12)
 
   const [newUser] = await query<{ id: string }>(
@@ -51,7 +60,15 @@ export async function POST(req: NextRequest) {
   )
 
   const token = await createVerificationToken(newUser.id, 'invite', 48)
-  await sendTeamInvite(email, session.user.name, business[0]?.name ?? '', token)
 
-  return NextResponse.json({ success: true }, { status: 201 })
+  // Email is best-effort — SES sandbox may reject unverified addresses
+  let emailSent = true
+  try {
+    await sendTeamInvite(email, session.user.name, business[0]?.name ?? '', token)
+  } catch (err) {
+    emailSent = false
+    console.warn('[team invite] email failed (SES sandbox?):', (err as Error).message)
+  }
+
+  return NextResponse.json({ success: true, emailSent }, { status: 201 })
 }

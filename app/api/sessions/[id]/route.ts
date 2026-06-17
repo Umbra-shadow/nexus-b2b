@@ -15,9 +15,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
     `SELECT
        s.*,
        ib.id as ib_id, ib.name as ib_name, ib.slug as ib_slug, ib.industry as ib_industry,
-       ib.country as ib_country, ib.logo_s3_key as ib_logo,
+       ib.country as ib_country, ib.city as ib_city, ib.website as ib_website,
+       ib.description as ib_description, ib.services as ib_services, ib.logo_s3_key as ib_logo,
        rb.id as rb_id, rb.name as rb_name, rb.slug as rb_slug, rb.industry as rb_industry,
-       rb.country as rb_country, rb.logo_s3_key as rb_logo,
+       rb.country as rb_country, rb.city as rb_city, rb.website as rb_website,
+       rb.description as rb_description, rb.services as rb_services, rb.logo_s3_key as rb_logo,
        ia.id as ia_id, ia.name as ia_name, ia.email as ia_email,
        ra.id as ra_id, ra.name as ra_name, ra.email as ra_email
      FROM sessions s
@@ -51,8 +53,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
     createdAt: row.created_at,
     acceptedAt: row.accepted_at,
     closedAt: row.closed_at,
-    initiatorBusiness: { id: row.ib_id, name: row.ib_name, slug: row.ib_slug, industry: row.ib_industry, country: row.ib_country, logoUrl: ibLogoUrl },
-    receiverBusiness: { id: row.rb_id, name: row.rb_name, slug: row.rb_slug, industry: row.rb_industry, country: row.rb_country, logoUrl: rbLogoUrl },
+    selectedServices: row.selected_services ?? [],
+    initiatorBusiness: { id: row.ib_id, name: row.ib_name, slug: row.ib_slug, industry: row.ib_industry, country: row.ib_country, city: row.ib_city, website: row.ib_website, description: row.ib_description, services: row.ib_services ?? [], logoUrl: ibLogoUrl },
+    receiverBusiness: { id: row.rb_id, name: row.rb_name, slug: row.rb_slug, industry: row.rb_industry, country: row.rb_country, city: row.rb_city, website: row.rb_website, description: row.rb_description, services: row.rb_services ?? [], logoUrl: rbLogoUrl },
     initiatorAgent: { id: row.ia_id, name: row.ia_name, email: row.ia_email },
     receiverAgent: row.ra_id ? { id: row.ra_id, name: row.ra_name, email: row.ra_email } : null,
   }

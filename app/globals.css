@@ -104,12 +104,12 @@
   --nx-line: #edeae4;
   --nx-border: #e2ddd6;
   --nx-strong: #cdc8be;
-  --nx-faint: #b8b3a8;
-  --nx-subtle: #9c9384;
-  --nx-muted: #6c6456;
-  --nx-fg: #433e36;
-  --nx-fg-bright: #23201b;
-  --nx-fg-strong: #13110d;
+  --nx-faint: #b0aba4;
+  --nx-subtle: #777777;
+  --nx-muted: #444444;
+  --nx-fg: #1c1c1c;
+  --nx-fg-bright: #0d0d0d;
+  --nx-fg-strong: #000000;
   --nx-accent: #c44b1b;
 }
 
@@ -236,7 +236,7 @@ html[data-theme] body { background: var(--nx-bg); color: var(--nx-fg); }
   background: var(--nx-raised);
   border: 1px solid var(--nx-border);
   color: var(--nx-fg-strong);
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-mono), system-ui, sans-serif;
   font-size: 12px;
   padding: 10px 14px;
   width: 100%;

@@ -6,12 +6,8 @@ const bodyStyle = { fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(-
 
 export default function PoliciesPage() {
   return (
-    <div style={{ padding: '28px 20px', maxWidth: 760, animation: 'nx-rise 0.4s ease' }}>
-      <div style={{ marginBottom: 36 }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 10 }}>/ Settings / Policies</div>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 52, lineHeight: 0.9, color: 'var(--nx-fg-strong)', marginBottom: 16 }}>POLICIES</h1>
-        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--nx-muted)' }}>Last updated: January 2026 · Effective immediately</p>
-      </div>
+    <div>
+      <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--nx-muted)', marginBottom: 28 }}>Last updated: January 2026 · Effective immediately</p>
 
       <div style={{ border: '1px solid var(--nx-border)', padding: '32px 36px', display: 'flex', flexDirection: 'column', gap: 0 }}>
 

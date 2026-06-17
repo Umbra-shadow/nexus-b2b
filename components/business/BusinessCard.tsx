@@ -129,14 +129,14 @@ export function BusinessCard({ business, onStartSession }: BusinessCardProps) {
 
       {/* Actions */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingTop: 12, borderTop: '1px solid var(--nx-line)', marginTop: 'auto' }}>
-        {(business as { website?: string | null }).website ? (
+        {business.website ? (
           <a
-            href={(business as { website?: string | null }).website!}
+            href={business.website}
             target="_blank"
             rel="noopener noreferrer"
             style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--nx-subtle)', textDecoration: 'none', textTransform: 'uppercase' }}
           >
-            ↗ Website
+            ↗ {business.website.replace(/^https?:\/\/(www\.)?/, '')}
           </a>
         ) : (
           <span />

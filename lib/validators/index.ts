@@ -57,7 +57,7 @@ export const CreateReceiptSchema = z.object({
   items: z.array(ReceiptItemSchema).min(1),
   currency: z.string().length(3).default('USD'),
   taxRate: z.number().min(0).max(1).default(0),
-  notes: z.string().max(1000).optional(),
+  notes: z.string().max(1000).nullish(),
 })
 
 export const InviteTeamSchema = z.object({
@@ -71,6 +71,7 @@ export const UpdateBusinessSchema = z.object({
   description: z.string().max(500).optional(),
   city: z.string().max(100).optional(),
   website: z.string().url().optional().or(z.literal('')),
+  industry: z.enum(INDUSTRIES).optional(),
   bankAccountName: z.string().max(200).optional(),
   bankAccountNumber: z.string().max(50).optional(),
   bankName: z.string().max(100).optional(),
