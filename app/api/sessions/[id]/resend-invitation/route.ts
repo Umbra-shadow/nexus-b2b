@@ -43,19 +43,29 @@ export async function POST(_req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Only the initiator can resend the invitation' }, { status: 403 })
   }
 
-  try {
-    await sendSessionInvitation({
-      to: row.receiver_contact_email ?? row.receiver_email,
-      inviterBusinessName: row.ib_name,
-      inviterDescription: row.ib_description ?? '',
-      receiverBusinessName: row.rb_name,
-      searchContext: row.search_context ?? undefined,
-      token: row.invitation_token,
-    })
-    return NextResponse.json({ success: true })
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Unknown error'
-    console.error('[resend-invitation]', msg)
-    return NextResponse.json({ error: `Email delivery failed: ${msg}` }, { status: 500 })
+  const primaryTo = row.receiver_contact_email ?? row.receiver_email
+  const recipients = Array.from(new Set([primaryTo, row.receiver_email].filter(Boolean)))
+
+  const results = await Promise.allSettled(
+    recipients.map((to) =>
+      sendSessionInvitation({
+        to,
+        inviterBusinessName: row.ib_name,
+        inviterDescription: row.ib_description ?? '',
+        receiverBusinessName: row.rb_name,
+        searchContext: row.search_context ?? undefined,
+        token: row.invitation_token,
+      })
+    )
+  )
+
+  const failed = results.filter((r) => r.status === 'rejected')
+  if (failed.length === results.length) {
+    const msg = (failed[0] as PromiseRejectedResult).reason instanceof Error
+      ? (failed[0] as PromiseRejectedResult).reason.message
+      : 'Email delivery failed'
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
+
+  return NextResponse.json({ success: true })
 }

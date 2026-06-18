@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { query, queryOne, transaction } from '@/lib/db/aurora'
 import { createVerificationToken } from '@/lib/auth/tokens'
-import { sendVerificationEmail, sendNewBusinessNotification } from '@/lib/email/ses'
+import { sendVerificationEmail, sendNewBusinessNotification, sendBusinessWelcome } from '@/lib/email/ses'
 import { uploadFile, buildLogoKey, buildDocKey } from '@/lib/s3/upload'
 import { slugify } from '@/lib/utils'
 import { RegisterBusinessSchema, RegisterUserServerSchema } from '@/lib/validators'
@@ -106,6 +106,15 @@ export async function POST(req: NextRequest) {
       await sendVerificationEmail(email, name, token)
     } catch (emailErr) {
       console.warn('[register] verification email failed:', emailErr)
+    }
+
+    // Welcome email to the business contact address (if different from admin login email)
+    if (contactEmail && contactEmail.toLowerCase() !== email.toLowerCase()) {
+      try {
+        await sendBusinessWelcome(contactEmail, businessName, name)
+      } catch (emailErr) {
+        console.warn('[register] business welcome email failed:', emailErr)
+      }
     }
 
     try {

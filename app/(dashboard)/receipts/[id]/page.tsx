@@ -28,10 +28,12 @@ interface ReceiptRow {
   bank_swift: string | null
 }
 
-const STATUS_STYLE: Record<string, { text: string; border: string }> = {
-  draft: { text: 'var(--nx-muted)', border: 'var(--nx-border)' },
-  sent: { text: '#c44b1b', border: '#7a2a0c' },
-  acknowledged: { text: '#5a9a7a', border: '#2a5a3a' },
+const STATUS_STYLE: Record<string, { text: string; border: string; label: string }> = {
+  draft:        { text: 'var(--nx-muted)', border: 'var(--nx-border)',         label: 'Draft' },
+  sent:         { text: '#c44b1b',         border: 'rgba(196,75,27,0.5)',      label: 'Sent — awaiting delivery confirmation' },
+  processed:    { text: '#6b7fcf',         border: 'rgba(107,127,207,0.5)',    label: 'Processed — awaiting sign-off' },
+  acknowledged: { text: '#5a9a7a',         border: 'rgba(90,154,122,0.5)',     label: 'Completed' },
+  completed:    { text: '#5a9a7a',         border: 'rgba(90,154,122,0.5)',     label: 'Completed' },
 }
 
 export default async function ReceiptPage({ params }: Props) {
@@ -89,8 +91,8 @@ export default async function ReceiptPage({ params }: Props) {
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--nx-muted)', letterSpacing: '0.06em' }}>{formatDate(receipt.created_at)}</div>
           </div>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: sc.text, border: `1px solid ${sc.border}`, padding: '6px 14px' }}>
-            {receipt.status}
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: sc.text, border: `1px solid ${sc.border}`, padding: '6px 14px', whiteSpace: 'nowrap' }}>
+            {sc.label}
           </span>
         </div>
 
@@ -109,15 +111,16 @@ export default async function ReceiptPage({ params }: Props) {
         {/* Line items */}
         <div style={{ borderBottom: '1px solid var(--nx-border)' }}>
           <div style={{ padding: '14px 28px', borderBottom: '1px solid var(--nx-border)', background: 'var(--nx-raised)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
-              {['Description', 'Qty', 'Unit price', 'Total'].map((h) => (
-                <div key={h} style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--nx-muted)', textAlign: h === 'Description' ? 'left' : 'right' }}>{h}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 100px 80px 1fr 1fr' }}>
+              {['Description', 'Unit', 'Qty', 'Unit price', 'Total'].map((h) => (
+                <div key={h} style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--nx-muted)', textAlign: h === 'Description' || h === 'Unit' ? 'left' : 'right' }}>{h}</div>
               ))}
             </div>
           </div>
           {items.map((item, i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', padding: '12px 28px', borderBottom: '1px solid var(--nx-line)' }}>
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 100px 80px 1fr 1fr', padding: '12px 28px', borderBottom: '1px solid var(--nx-line)', alignItems: 'center' }}>
               <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-fg-strong)' }}>{item.description}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--nx-muted)', letterSpacing: '0.06em' }}>{(item as { unit?: string }).unit ?? 'Units'}</div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-muted)', textAlign: 'right' }}>{item.qty}</div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-muted)', textAlign: 'right' }}>{formatCurrency(item.unitPrice, receipt.currency)}</div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-fg-strong)', fontWeight: 600, textAlign: 'right' }}>{formatCurrency(item.total, receipt.currency)}</div>
@@ -185,43 +188,92 @@ export default async function ReceiptPage({ params }: Props) {
         )}
 
         {/* Actions */}
-        <div style={{ padding: '20px 28px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <Link
-            href={`/sessions/${receipt.session_id}`}
-            style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-fg)', border: '1px solid var(--nx-border)', padding: '12px 20px', textDecoration: 'none' }}
+        <div style={{ padding: '20px 28px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <Link
+              href={`/sessions/${receipt.session_id}`}
+              style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-fg)', border: '1px solid var(--nx-border)', padding: '12px 20px', textDecoration: 'none' }}
+            >
+              ← Session
+            </Link>
+
+            {/* ISSUER: mark as processed ("I've delivered my side") */}
+            {!isReceiver && receipt.status === 'sent' && (
+              <form action={`/api/receipts/${id}/process`} method="POST">
+                <button
+                  type="submit"
+                  style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fff', background: '#6b7fcf', border: 'none', padding: '12px 20px', cursor: 'pointer' }}
+                >
+                  ✓ Mark as delivered
+                </button>
+              </form>
+            )}
+
+            {/* ISSUER: resend while still in sent state */}
+            {!isReceiver && receipt.status === 'sent' && (
+              <form action={`/api/receipts/${id}/resend`} method="POST">
+                <button
+                  type="submit"
+                  style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-fg)', background: 'none', border: '1px solid var(--nx-border)', padding: '12px 20px', cursor: 'pointer' }}
+                >
+                  ↺ Resend
+                </button>
+              </form>
+            )}
+
+            {/* ISSUER: processed — waiting for receiver */}
+            {!isReceiver && receipt.status === 'processed' && (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6b7fcf', border: '1px solid rgba(107,127,207,0.4)', padding: '12px 16px' }}>
+                ✓ Delivered — awaiting receiver sign-off
+              </span>
+            )}
+
+            {/* RECEIVER: mark as completed ("I confirm all is done") — requires processed first */}
+            {isReceiver && receipt.status === 'processed' && (
+              <form action={`/api/receipts/${id}/acknowledge`} method="POST">
+                <button
+                  type="submit"
+                  style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fff', background: '#5a9a7a', border: 'none', padding: '12px 20px', cursor: 'pointer' }}
+                >
+                  ✓ Mark as completed
+                </button>
+              </form>
+            )}
+
+            {/* RECEIVER: legacy — allow acknowledging from 'sent' for old receipts */}
+            {isReceiver && receipt.status === 'sent' && (
+              <form action={`/api/receipts/${id}/acknowledge`} method="POST">
+                <button
+                  type="submit"
+                  style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fff', background: '#5a9a7a', border: 'none', padding: '12px 20px', cursor: 'pointer' }}
+                >
+                  ✓ Mark as completed
+                </button>
+              </form>
+            )}
+
+            {/* RECEIVER: still waiting for issuer to deliver */}
+            {isReceiver && receipt.status === 'sent' && (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--nx-muted)', letterSpacing: '0.06em' }}>
+                Waiting for issuer to confirm delivery
+              </span>
+            )}
+
+            {(receipt.status === 'completed' || receipt.status === 'acknowledged') && (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#5a9a7a', border: '1px solid rgba(90,154,122,0.4)', padding: '12px 16px' }}>
+                ✓ Completed
+              </span>
+            )}
+          </div>
+
+          {/* Download — real PDF generated server-side */}
+          <a
+            href={`/api/receipts/${id}/pdf`}
+            download
+            style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c44b1b', border: '1px solid rgba(196,75,27,0.4)', padding: '12px 20px', textDecoration: 'none', whiteSpace: 'nowrap' }}
           >
-            ← Back to session
-          </Link>
-
-          {/* Issuer: resend notification */}
-          {!isReceiver && receipt.status === 'sent' && (
-            <form action={`/api/receipts/${id}/resend`} method="POST">
-              <button
-                type="submit"
-                style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-fg)', background: 'none', border: '1px solid var(--nx-strong)', padding: '12px 20px', cursor: 'pointer' }}
-              >
-                Resend →
-              </button>
-            </form>
-          )}
-
-          {/* Receiver: acknowledge = mark as completed */}
-          {isReceiver && receipt.status === 'sent' && (
-            <form action={`/api/receipts/${id}/acknowledge`} method="POST">
-              <button
-                type="submit"
-                style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#ffffff', background: '#c44b1b', border: 'none', padding: '12px 20px', cursor: 'pointer' }}
-              >
-                Mark as completed ✓
-              </button>
-            </form>
-          )}
-
-          {receipt.status === 'acknowledged' && (
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#5a9a7a', border: '1px solid #274a3a', padding: '12px 16px' }}>
-              ✓ Completed
-            </span>
-          )}
+            ⬇ Download PDF
+          </a>
         </div>
       </div>
     </div>

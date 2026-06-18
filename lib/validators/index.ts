@@ -48,8 +48,14 @@ export const CreateSessionSchema = z.object({
   selectedServices: z.array(z.string().min(1).max(100)).max(10).default([]),
 })
 
+export const RECEIPT_UNIT_TYPES = [
+  'Hours', 'Units', 'API Calls', 'Tokens', 'Subscriptions',
+  'Licenses', 'Months', 'Days', 'Requests', 'Custom',
+] as const
+
 export const ReceiptItemSchema = z.object({
   description: z.string().min(1).max(200),
+  unit: z.string().max(50).default('Units'),
   qty: z.number().positive(),
   unitPrice: z.number().nonnegative(),
 })

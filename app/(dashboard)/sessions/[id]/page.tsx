@@ -51,7 +51,7 @@ export default function SessionPage() {
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showReceiptModal, setShowReceiptModal] = useState(false)
-  const [rcItems, setRcItems] = useState<{ description: string; qty: string; unitPrice: string }[]>([{ description: '', qty: '1', unitPrice: '' }])
+  const [rcItems, setRcItems] = useState<{ description: string; unit: string; qty: string; unitPrice: string }[]>([{ description: '', unit: 'Units', qty: '1', unitPrice: '' }])
   const [rcCurrency, setRcCurrency] = useState('EUR')
   const [rcTaxRate, setRcTaxRate] = useState('')
   const [rcNotes, setRcNotes] = useState('')
@@ -299,6 +299,7 @@ export default function SessionPage() {
           sessionId,
           items: validItems.map(i => ({
             description: i.description.trim(),
+            unit: i.unit || 'Units',
             qty: Math.max(1, parseFloat(i.qty) || 1),
             unitPrice: parseFloat(i.unitPrice),
           })),
@@ -309,7 +310,7 @@ export default function SessionPage() {
       })
       if (res.ok) {
         setShowReceiptModal(false)
-        setRcItems([{ description: '', qty: '1', unitPrice: '' }])
+        setRcItems([{ description: '', unit: 'Units', qty: '1', unitPrice: '' }])
         setRcCurrency('EUR')
         setRcTaxRate('')
         setRcNotes('')
@@ -452,22 +453,7 @@ export default function SessionPage() {
                 </p>
               </div>
 
-              {invitationUrl && (
-                <div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 8 }}>Invitation link</div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <div style={{ flex: 1, background: 'var(--nx-panel)', border: '1px solid var(--nx-line)', padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--nx-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
-                      {invitationUrl}
-                    </div>
-                    <button
-                      onClick={copyInviteLink}
-                      style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', padding: '10px 16px', border: copiedLink ? '1px solid #5a9a7a' : '1px solid var(--nx-border)', background: copiedLink ? 'rgba(90,154,122,0.12)' : 'var(--nx-panel)', color: copiedLink ? '#5a9a7a' : 'var(--nx-fg)', cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s' }}
-                    >
-                      {copiedLink ? '✓ Copied' : 'Copy →'}
-                    </button>
-                  </div>
-                </div>
-              )}
+              {/* Invitation link intentionally not shown to the sender — only delivered via email to the receiver */}
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -1052,16 +1038,21 @@ export default function SessionPage() {
                 <div>
                   <div style={monoLabel}>Line items</div>
                   {/* Column headers */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 64px 96px 80px 28px', gap: 6, marginBottom: 6 }}>
-                    {['Description', 'Qty', 'Unit price', 'Total', ''].map(h => (
-                      <div key={h} style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-subtle)', textAlign: h === 'Description' ? 'left' : 'right' }}>{h}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 110px 60px 96px 80px 28px', gap: 6, marginBottom: 6 }}>
+                    {['Description', 'Unit type', 'Qty', 'Unit price', 'Total', ''].map(h => (
+                      <div key={h} style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-subtle)', textAlign: (h === 'Description' || h === 'Unit type' || h === '') ? 'left' : 'right' }}>{h}</div>
                     ))}
                   </div>
                   {rcItems.map((item, i) => {
                     const itemTotal = (parseFloat(item.qty)||1) * (parseFloat(item.unitPrice)||0)
                     return (
-                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 64px 96px 80px 28px', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '1.6fr 110px 60px 96px 80px 28px', gap: 6, marginBottom: 6, alignItems: 'center' }}>
                         <input value={item.description} onChange={e => setRcItems(prev => prev.map((it, j) => j===i ? { ...it, description: e.target.value } : it))} placeholder="Service / product description" style={{ ...inputStyle }} />
+                        <select value={item.unit} onChange={e => setRcItems(prev => prev.map((it, j) => j===i ? { ...it, unit: e.target.value } : it))} style={{ ...inputStyle, padding: '10px 8px', cursor: 'pointer' }}>
+                          {['Hours', 'Units', 'API Calls', 'Tokens', 'Subscriptions', 'Licenses', 'Months', 'Days', 'Requests', 'Custom'].map(u => (
+                            <option key={u} value={u}>{u}</option>
+                          ))}
+                        </select>
                         <input value={item.qty} onChange={e => setRcItems(prev => prev.map((it, j) => j===i ? { ...it, qty: e.target.value } : it))} type="number" min="1" step="1" placeholder="1" style={{ ...inputStyle, textAlign: 'right', padding: '10px 8px' }} />
                         <input value={item.unitPrice} onChange={e => setRcItems(prev => prev.map((it, j) => j===i ? { ...it, unitPrice: e.target.value } : it))} type="number" min="0" step="0.01" placeholder="0.00" style={{ ...inputStyle, textAlign: 'right', padding: '10px 8px' }} />
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--nx-fg-strong)', textAlign: 'right' }}>{fmt(itemTotal)}</div>
@@ -1071,7 +1062,7 @@ export default function SessionPage() {
                       </div>
                     )
                   })}
-                  <button onClick={() => setRcItems(prev => [...prev, { description: '', qty: '1', unitPrice: '' }])} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c44b1b', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 4 }}>＋ Add line item</button>
+                  <button onClick={() => setRcItems(prev => [...prev, { description: '', unit: 'Units', qty: '1', unitPrice: '' }])} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c44b1b', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 4 }}>＋ Add line item</button>
                 </div>
 
                 {/* Tax + Notes row */}

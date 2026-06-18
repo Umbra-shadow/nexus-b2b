@@ -79,6 +79,9 @@ export async function POST(req: NextRequest) {
      WHERE u.business_id = $1 AND u.role = 'business_admin' LIMIT 1`,
     [receiverBusinessId]
   )
+  // Collect unique recipient addresses — contact_email is the preferred destination;
+  // also CC the admin's login email when it differs so they never miss it in their inbox.
+
 
   const isDemoReceiver = !receiverAdmin
 
@@ -110,18 +113,27 @@ export async function POST(req: NextRequest) {
     await query(`UPDATE sessions SET ai_introduced = true WHERE id = $1`, [newSession.id])
   } else {
     // Best-effort — session is already committed; don't fail the whole request over email
-    try {
-      await sendSessionInvitation({
-        to: receiverAdmin!.contact_email ?? receiverAdmin!.email,
-        inviterBusinessName: initiatorBusiness?.name ?? 'A business',
-        inviterDescription: initiatorBusiness?.description ?? '',
-        receiverBusinessName: receiverBusiness.name,
-        searchContext: searchContext ?? undefined,
-        token,
-      })
-    } catch (emailErr) {
-      console.error('[sessions/create] invitation email failed (Resend sandbox?):', emailErr)
-    }
+    const primaryTo = receiverAdmin!.contact_email ?? receiverAdmin!.email
+    const adminEmail = receiverAdmin!.email
+    const recipients = Array.from(new Set([primaryTo, adminEmail].filter(Boolean)))
+
+    const emailResults = await Promise.allSettled(
+      recipients.map((to) =>
+        sendSessionInvitation({
+          to,
+          inviterBusinessName: initiatorBusiness?.name ?? 'A business',
+          inviterDescription: initiatorBusiness?.description ?? '',
+          receiverBusinessName: receiverBusiness.name,
+          searchContext: searchContext ?? undefined,
+          token,
+        })
+      )
+    )
+    emailResults.forEach((r, idx) => {
+      if (r.status === 'rejected') {
+        console.error(`[sessions/create] email failed for ${recipients[idx]}:`, r.reason)
+      }
+    })
   }
 
   return NextResponse.json({ sessionId: newSession.id, isDemoSession: isDemoReceiver }, { status: 201 })

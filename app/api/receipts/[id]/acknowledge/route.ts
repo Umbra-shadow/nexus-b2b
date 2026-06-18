@@ -17,12 +17,13 @@ export async function POST(_req: NextRequest, { params }: Params) {
 
   if (!receipt) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (receipt.receiver_business_id !== session.user.businessId) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    return NextResponse.json({ error: 'Only the receiver can mark this as completed' }, { status: 403 })
   }
-  if (receipt.status !== 'sent') {
-    return NextResponse.json({ error: 'Receipt already acknowledged' }, { status: 400 })
+  // Accept both 'processed' (new flow) and 'sent' (legacy) so old receipts still work
+  if (!['sent', 'processed', 'acknowledged'].includes(receipt.status)) {
+    return NextResponse.json({ error: 'Receipt is already completed' }, { status: 400 })
   }
 
-  await query(`UPDATE receipts SET status = 'acknowledged' WHERE id = $1`, [id])
-  return NextResponse.redirect(new URL(`/receipts/${id}`, process.env.NEXT_PUBLIC_APP_URL!))
+  await query(`UPDATE receipts SET status = 'completed' WHERE id = $1`, [id])
+  return NextResponse.json({ success: true, status: 'completed' })
 }

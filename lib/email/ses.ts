@@ -4,8 +4,8 @@ const resend = new Resend(process.env.RESEND_API)
 const APP_URL = (process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '')
 const FROM = process.env.RESEND_FROM?.trim() || `NexusB2B <onboarding@resend.dev>`
 
-async function sendEmail(to: string, subject: string, html: string): Promise<string> {
-  const { data, error } = await resend.emails.send({ from: FROM, to, subject, html, headers: { 'X-Entity-Ref-ID': Date.now().toString() } })
+async function sendEmail(to: string, subject: string, html: string, text?: string): Promise<string> {
+  const { data, error } = await resend.emails.send({ from: FROM, to, subject, html, text, headers: { 'X-Entity-Ref-ID': Date.now().toString() } })
   if (error) throw new Error(error.message)
   console.log(`[email] sent to=${to} subject="${subject}" resend_id=${data?.id ?? 'unknown'}`)
   return data?.id ?? ''
@@ -54,22 +54,36 @@ export async function sendSessionInvitation(params: {
   token: string
 }): Promise<void> {
   const link = `${APP_URL}/sessions/accept/${params.token}`
-  await sendEmail(
-    params.to,
-    `${params.inviterBusinessName} wants to connect with you on NexusB2B`,
-    `<div style="font-family:Inter,sans-serif;max-width:560px;margin:0 auto;padding:32px">
-      <p style="color:#999;font-size:12px;margin-bottom:24px;font-family:monospace;letter-spacing:0.1em;text-transform:uppercase">NexusB2B — The Verified B2B Exchange</p>
-      <h2 style="color:#111;margin-bottom:8px;font-size:22px">New connection request</h2>
-      <p style="color:#555"><strong>${params.inviterBusinessName}</strong> is reaching out to <strong>${params.receiverBusinessName}</strong>.</p>
-      ${params.inviterDescription ? `<p style="color:#666">${params.inviterDescription}</p>` : ''}
-      ${params.searchContext ? `<p style="color:#555"><em>They are looking for: ${params.searchContext}</em></p>` : ''}
-      <p style="color:#555">Accept to open a private, AI-assisted deal session.</p>
-      <a href="${link}" style="display:inline-block;background:#c44b1b;color:#fff;padding:14px 28px;text-decoration:none;font-family:monospace;font-size:13px;margin:16px 0">
-        Accept &amp; Open Session →
-      </a>
-      <p style="color:#999;font-size:13px;margin-top:24px">This invitation expires in 48 hours.</p>
-    </div>`
-  )
+  const subject = `${params.inviterBusinessName} sent you a business session request`
+
+  const contextLine = params.searchContext ? `\nThey are specifically looking for: ${params.searchContext}\n` : ''
+  const descLine = params.inviterDescription ? `\nAbout them: ${params.inviterDescription}\n` : ''
+
+  const text = `Hello,
+
+${params.inviterBusinessName} has sent a session request to ${params.receiverBusinessName} on NexusB2B.
+${descLine}${contextLine}
+To review and accept this request, visit:
+${link}
+
+This link expires in 48 hours. If you were not expecting this, you can ignore it.
+
+— NexusB2B Team
+`
+
+  const html = `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#222">
+    <p style="margin:0 0 16px;font-size:14px;color:#555">NexusB2B · Business session request</p>
+    <p style="margin:0 0 12px">Hello,</p>
+    <p style="margin:0 0 12px"><strong>${params.inviterBusinessName}</strong> has sent a session request to <strong>${params.receiverBusinessName}</strong>.</p>
+    ${params.inviterDescription ? `<p style="margin:0 0 12px;color:#444">${params.inviterDescription}</p>` : ''}
+    ${params.searchContext ? `<p style="margin:0 0 12px;color:#444">They are looking for: <em>${params.searchContext}</em></p>` : ''}
+    <p style="margin:16px 0">
+      <a href="${link}" style="background:#c44b1b;color:#fff;padding:10px 20px;text-decoration:none;font-size:14px;display:inline-block">Accept &amp; Open Session</a>
+    </p>
+    <p style="margin:16px 0 0;font-size:12px;color:#888">This link expires in 48 hours. If you were not expecting this, you can ignore it.</p>
+  </div>`
+
+  await sendEmail(params.to, subject, html, text)
 }
 
 export async function sendTeamInvite(to: string, inviterName: string, businessName: string, token: string): Promise<void> {
@@ -85,6 +99,24 @@ export async function sendTeamInvite(to: string, inviterName: string, businessNa
         Accept Invitation →
       </a>
       <p style="color:#999;font-size:13px;margin-top:24px">This link expires in 48 hours.</p>
+    </div>`
+  )
+}
+
+export async function sendBusinessWelcome(to: string, businessName: string, adminName: string): Promise<void> {
+  await sendEmail(
+    to,
+    `${businessName} is now registered on NexusB2B`,
+    `<div style="font-family:Inter,sans-serif;max-width:520px;margin:0 auto;padding:32px">
+      <p style="color:#999;font-size:12px;margin-bottom:24px;font-family:monospace;letter-spacing:0.1em;text-transform:uppercase">NexusB2B — The Verified B2B Exchange</p>
+      <h2 style="color:#111;margin-bottom:8px;font-size:22px">${businessName} is on NexusB2B</h2>
+      <p style="color:#555">${adminName} has registered <strong>${businessName}</strong> on NexusB2B.</p>
+      <p style="color:#555">This is the contact address on file for your business. Session invitations and partnership requests from other verified businesses will be delivered here.</p>
+      <p style="color:#555">Your registration is currently <strong>pending verification</strong>. You will receive another email once the platform team has reviewed your submission.</p>
+      <a href="${APP_URL}/dashboard" style="display:inline-block;background:#c44b1b;color:#fff;padding:14px 28px;text-decoration:none;font-family:monospace;font-size:13px;margin:12px 0">
+        Go to Dashboard →
+      </a>
+      <p style="color:#999;font-size:12px;margin-top:24px">If your business did not register on NexusB2B, please ignore this email.</p>
     </div>`
   )
 }
