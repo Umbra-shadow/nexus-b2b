@@ -1,18 +1,28 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API)
-const APP_URL = (process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '')
-const FROM = process.env.RESEND_FROM?.trim() || `NexusB2B <onboarding@resend.dev>`
+// Resolved at runtime so missing env vars don't crash the build's static analysis phase
+function getClient() {
+  return new Resend(process.env.RESEND_API)
+}
+function getFrom() {
+  return process.env.RESEND_FROM?.trim() || 'NexusB2B <onboarding@resend.dev>'
+}
+function getAppUrl() {
+  return (process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '')
+}
 
 async function sendEmail(to: string, subject: string, html: string, text?: string): Promise<string> {
-  const { data, error } = await resend.emails.send({ from: FROM, to, subject, html, text, headers: { 'X-Entity-Ref-ID': Date.now().toString() } })
+  const { data, error } = await getClient().emails.send({
+    from: getFrom(), to, subject, html, text,
+    headers: { 'X-Entity-Ref-ID': Date.now().toString() },
+  })
   if (error) throw new Error(error.message)
   console.log(`[email] sent to=${to} subject="${subject}" resend_id=${data?.id ?? 'unknown'}`)
   return data?.id ?? ''
 }
 
 export async function sendVerificationEmail(to: string, name: string, token: string): Promise<void> {
-  const link = `${APP_URL}/auth/verify-email/${token}`
+  const link = `${getAppUrl()}/auth/verify-email/${token}`
   await sendEmail(
     to,
     'Verify your NexusB2B account',
@@ -29,7 +39,7 @@ export async function sendVerificationEmail(to: string, name: string, token: str
 }
 
 export async function sendPasswordResetEmail(to: string, name: string, token: string): Promise<void> {
-  const link = `${APP_URL}/auth/reset-password/${token}`
+  const link = `${getAppUrl()}/auth/reset-password/${token}`
   await sendEmail(
     to,
     'Reset your NexusB2B password',
@@ -53,7 +63,7 @@ export async function sendSessionInvitation(params: {
   searchContext?: string
   token: string
 }): Promise<void> {
-  const link = `${APP_URL}/sessions/accept/${params.token}`
+  const link = `${getAppUrl()}/sessions/accept/${params.token}`
   const subject = `${params.inviterBusinessName} sent you a business session request`
 
   const contextLine = params.searchContext ? `\nThey are specifically looking for: ${params.searchContext}\n` : ''
@@ -87,7 +97,7 @@ This link expires in 48 hours. If you were not expecting this, you can ignore it
 }
 
 export async function sendTeamInvite(to: string, inviterName: string, businessName: string, token: string): Promise<void> {
-  const link = `${APP_URL}/auth/accept-invite/${token}`
+  const link = `${getAppUrl()}/auth/accept-invite/${token}`
   await sendEmail(
     to,
     `You've been invited to join ${businessName} on NexusB2B`,
@@ -113,7 +123,7 @@ export async function sendBusinessWelcome(to: string, businessName: string, admi
       <p style="color:#555">${adminName} has registered <strong>${businessName}</strong> on NexusB2B.</p>
       <p style="color:#555">This is the contact address on file for your business. Session invitations and partnership requests from other verified businesses will be delivered here.</p>
       <p style="color:#555">Your registration is currently <strong>pending verification</strong>. You will receive another email once the platform team has reviewed your submission.</p>
-      <a href="${APP_URL}/dashboard" style="display:inline-block;background:#c44b1b;color:#fff;padding:14px 28px;text-decoration:none;font-family:monospace;font-size:13px;margin:12px 0">
+      <a href="${getAppUrl()}/dashboard" style="display:inline-block;background:#c44b1b;color:#fff;padding:14px 28px;text-decoration:none;font-family:monospace;font-size:13px;margin:12px 0">
         Go to Dashboard →
       </a>
       <p style="color:#999;font-size:12px;margin-top:24px">If your business did not register on NexusB2B, please ignore this email.</p>
@@ -128,10 +138,10 @@ export async function sendTestEmail(to: string): Promise<{ id: string; from: str
     `<div style="font-family:Inter,sans-serif;max-width:480px;margin:0 auto;padding:32px">
       <p style="color:#999;font-size:12px;font-family:monospace;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:20px">NexusB2B — Admin Diagnostic</p>
       <h2 style="color:#111;font-size:20px;margin-bottom:8px">Email delivery test</h2>
-      <p style="color:#555">If you received this, Resend is delivering emails correctly from <strong>${FROM}</strong>.</p>
+      <p style="color:#555">If you received this, Resend is delivering emails correctly from <strong>${getFrom()}</strong>.</p>
     </div>`
   )
-  return { id, from: FROM, to }
+  return { id, from: getFrom(), to }
 }
 
 export async function sendNewBusinessNotification(params: {
@@ -148,7 +158,7 @@ export async function sendNewBusinessNotification(params: {
   const adminEmail = process.env.PLATFORM_ADMIN_EMAIL
   if (!adminEmail) return
 
-  const reviewLink = `${APP_URL}/admin/businesses/${params.businessId}`
+  const reviewLink = `${getAppUrl()}/admin/businesses/${params.businessId}`
 
   await sendEmail(
     adminEmail,
@@ -184,7 +194,7 @@ export async function sendInfoRequest(to: string, adminName: string, businessNam
       <p style="color:#555">We are reviewing your registration for <strong>${businessName}</strong> and need a bit more information before we can proceed:</p>
       <blockquote style="border-left:3px solid #c44b1b;margin:16px 0;padding:12px 16px;color:#333;font-style:italic">${message}</blockquote>
       <p style="color:#555">Please log in and update your business profile or reply to this email with the requested details.</p>
-      <a href="${APP_URL}/settings/business" style="display:inline-block;background:#c44b1b;color:#fff;padding:14px 28px;text-decoration:none;font-family:monospace;font-size:13px;margin:12px 0">
+      <a href="${getAppUrl()}/settings/business" style="display:inline-block;background:#c44b1b;color:#fff;padding:14px 28px;text-decoration:none;font-family:monospace;font-size:13px;margin:12px 0">
         Update Profile →
       </a>
       <p style="color:#999;font-size:12px;margin-top:24px">NexusB2B Team</p>
@@ -201,7 +211,7 @@ export async function sendVerificationResult(to: string, businessName: string, a
     ? `<div style="font-family:Inter,sans-serif;max-width:520px;margin:0 auto;padding:32px">
         <h2 style="color:#16a34a;font-size:22px">Your business is verified!</h2>
         <p style="color:#555"><strong>${businessName}</strong> is now verified on NexusB2B. You appear in search results and can receive connection requests.</p>
-        <a href="${APP_URL}/dashboard" style="display:inline-block;background:#c44b1b;color:#fff;padding:14px 28px;text-decoration:none;font-family:monospace;font-size:13px;margin:12px 0">
+        <a href="${getAppUrl()}/dashboard" style="display:inline-block;background:#c44b1b;color:#fff;padding:14px 28px;text-decoration:none;font-family:monospace;font-size:13px;margin:12px 0">
           Go to Dashboard →
         </a>
       </div>`
@@ -209,7 +219,7 @@ export async function sendVerificationResult(to: string, businessName: string, a
         <h2 style="color:#dc2626;font-size:22px">Verification requires attention</h2>
         <p style="color:#555">Your verification for <strong>${businessName}</strong> could not be completed.${reason ? ` Reason: ${reason}` : ''}</p>
         <p style="color:#555">Please log in and resubmit your business documentation.</p>
-        <a href="${APP_URL}/settings/business" style="display:inline-block;background:#c44b1b;color:#fff;padding:14px 28px;text-decoration:none;font-family:monospace;font-size:13px;margin:12px 0">
+        <a href="${getAppUrl()}/settings/business" style="display:inline-block;background:#c44b1b;color:#fff;padding:14px 28px;text-decoration:none;font-family:monospace;font-size:13px;margin:12px 0">
           Update Documentation →
         </a>
       </div>`
