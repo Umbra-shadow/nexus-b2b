@@ -9,7 +9,7 @@ export default function SupportPage() {
   const faqs = [
     {
       q: 'How do I verify my business on NexusB2B?',
-      a: 'Navigate to your business profile and submit official documentation (business license, tax ID, incorporation papers). Our team reviews submissions within 24–48 hours. Once verified, you'll unlock features like advanced discovery filters and receipt generation.',
+      a: "Navigate to your business profile and submit official documentation (business license, tax ID, incorporation papers). Our team reviews submissions within 24–48 hours. Once verified, you'll unlock features like advanced discovery filters and receipt generation.",
     },
     {
       q: 'What does a "receipt" represent in a session?',
