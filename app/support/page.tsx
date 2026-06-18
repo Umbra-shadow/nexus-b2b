@@ -6,30 +6,30 @@ import { MarketingShell } from '@/components/marketing/MarketingShell'
 export default function SupportPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0)
 
-  const faqs = [
+  const faqs: { q: string; a: string }[] = [
     {
-      q: 'How do I verify my business on NexusB2B?',
-      a: "Navigate to your business profile and submit official documentation (business license, tax ID, incorporation papers). Our team reviews submissions within 24–48 hours. Once verified, you'll unlock features like advanced discovery filters and receipt generation.",
+      q: `How do I verify my business on NexusB2B?`,
+      a: `Navigate to your business profile and submit official documentation (business license, tax ID, incorporation papers). Our team reviews submissions within 24-48 hours. Once verified, you will unlock features like advanced discovery filters and receipt generation.`,
     },
     {
-      q: 'What does a "receipt" represent in a session?',
-      a: 'A receipt is a cryptographically signed record of a business interaction—proof that two parties met, discussed terms, and agreed on outcomes. Receipts are encrypted with AES-256-GCM and can only be decrypted by the session initiator or receiver. You can download all receipts as a PDF from your settings.',
+      q: `What does a receipt represent in a session?`,
+      a: `A receipt is a cryptographically signed record of a business interaction - proof that two parties met, discussed terms, and agreed on outcomes. Receipts are encrypted with AES-256-GCM and can only be decrypted by the session initiator or receiver. You can download all receipts as a PDF from your settings.`,
     },
     {
-      q: 'Can I export or download my business data?',
-      a: 'Yes. In Settings > Data, you can download all receipts as a single PDF. For comprehensive data exports (including contacts, session history), contact our support team at support@nexusb2b.io.',
+      q: `Can I export or download my business data?`,
+      a: `Yes. In Settings > Data, you can download all receipts as a single PDF. For comprehensive data exports (including contacts, session history), contact our support team at support@nexusb2b.io.`,
     },
     {
-      q: 'How do I delete my account permanently?',
-      a: 'Go to Settings > Account, scroll to "Danger Zone," and click "Delete Account Fully." This action is irreversible and will remove all your business data, receipts, and session history within 30 days.',
+      q: `How do I delete my account permanently?`,
+      a: `Go to Settings > Account, scroll to Danger Zone, and click Delete Account Fully. This action is irreversible and will remove all your business data, receipts, and session history within 30 days.`,
     },
     {
-      q: 'Who can I invite to sessions on my behalf?',
-      a: 'Only verified agents of your business (added in Settings > Business). Agents have read-only access to receipts and cannot modify your business profile. Session invites are always sent under your verified business identity.',
+      q: `Who can I invite to sessions on my behalf?`,
+      a: `Only verified agents of your business (added in Settings > Business). Agents have read-only access to receipts and cannot modify your business profile. Session invites are always sent under your verified business identity.`,
     },
     {
-      q: 'Is there a maximum number of sessions I can open?',
-      a: 'No. However, concurrent sessions may be rate-limited based on your subscription tier (demo tier: 5 concurrent sessions). Contact partnerships@nexusb2b.io for enterprise limits.',
+      q: `Is there a maximum number of sessions I can open?`,
+      a: `No. However, concurrent sessions may be rate-limited based on your subscription tier (demo tier: 5 concurrent sessions). Contact partnerships@nexusb2b.io for enterprise limits.`,
     },
   ]
 
