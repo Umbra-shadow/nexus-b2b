@@ -64,8 +64,6 @@ export default function SessionPage() {
   const [lummyLoading, setLummyLoading] = useState(false)
   const [closing, setClosing] = useState(false)
   const [confirmingClose, setConfirmingClose] = useState(false)
-  const [invitationUrl, setInvitationUrl] = useState<string | null>(null)
-  const [copiedLink, setCopiedLink] = useState(false)
   const [resendingInvite, setResendingInvite] = useState(false)
   const [resendInviteStatus, setResendInviteStatus] = useState<'idle' | 'sent' | 'error'>('idle')
   const [resendInviteError, setResendInviteError] = useState('')
@@ -97,7 +95,6 @@ export default function SessionPage() {
     if (res.ok) {
       const json = await res.json()
       setSession(json.session)
-      if (json.session.invitationUrl) setInvitationUrl(json.session.invitationUrl)
     }
   }, [sessionId])
 
@@ -271,17 +268,6 @@ export default function SessionPage() {
     } catch {
       setCancelling(false)
       setConfirmingCancel(false)
-    }
-  }
-
-  async function copyInviteLink() {
-    if (!invitationUrl) return
-    try {
-      await navigator.clipboard.writeText(invitationUrl)
-      setCopiedLink(true)
-      setTimeout(() => setCopiedLink(false), 2500)
-    } catch {
-      // fallback: select text
     }
   }
 
@@ -546,7 +532,41 @@ export default function SessionPage() {
               )
             }
 
-            // Attachment message (PDF)
+            // Receipt reference card — created when a receipt is issued inside a session
+            if (msg.type === 'receipt_ref' && msg.receipt_id) {
+              return (
+                <div key={msg.message_id} style={{ alignSelf: isOwn ? 'flex-end' : 'flex-start', maxWidth: '72%' }}>
+                  <div style={{ border: '1px solid rgba(196,75,27,0.35)', background: 'rgba(196,75,27,0.05)', padding: '16px 18px' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 8 }}>
+                      ◈ Receipt · #{msg.receipt_id.slice(0, 8).toUpperCase()}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-fg-strong)', marginBottom: 14, lineHeight: 1.5 }}>
+                      {msg.content.replace('📄 Receipt sent: ', '')}
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      <a
+                        href={`/receipts/${msg.receipt_id}`}
+                        style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#c44b1b', textDecoration: 'none', border: '1px solid rgba(196,75,27,0.4)', padding: '7px 12px' }}
+                      >
+                        View receipt →
+                      </a>
+                      <a
+                        href={`/api/receipts/${msg.receipt_id}/pdf`}
+                        download
+                        style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--nx-fg)', textDecoration: 'none', border: '1px solid var(--nx-border)', padding: '7px 12px', background: 'var(--nx-raised)' }}
+                      >
+                        ⬇ Download PDF
+                      </a>
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--nx-subtle)', textAlign: isOwn ? 'right' : 'left', marginTop: 5 }}>
+                    {msg.sender_name} · {formatTime(msg.created_at ?? '')}
+                  </div>
+                </div>
+              )
+            }
+
+            // Uploaded PDF attachment — shows filename and direct download link
             if (msg.type === 'attachment') {
               const sizeKb = msg.attachment_size ? Math.round(msg.attachment_size / 1024) : null
               return (
@@ -560,7 +580,7 @@ export default function SessionPage() {
                       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--nx-subtle)', marginTop: 3 }}>PDF{sizeKb ? ` · ${sizeKb} KB` : ''}</div>
                     </div>
                     {msg.attachment_url && (
-                      <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: '#c44b1b', textDecoration: 'none', border: '1px solid rgba(196,75,27,0.4)', padding: '5px 10px', flexShrink: 0 }}>↓ Open</a>
+                      <a href={msg.attachment_url} download={msg.attachment_name ?? 'document.pdf'} style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: '#c44b1b', textDecoration: 'none', border: '1px solid rgba(196,75,27,0.4)', padding: '5px 10px', flexShrink: 0 }}>⬇ Download</a>
                     )}
                   </div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--nx-subtle)', textAlign: isOwn ? 'right' : 'left', marginTop: 5 }}>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" fill="#111111"/>
+  <!-- N mark: two verticals + diagonal -->
+  <rect x="6" y="7" width="3.5" height="18" fill="#ffffff"/>
+  <polygon points="6,7 9.5,7 22.5,25 19,25" fill="#ffffff"/>
+  <rect x="19" y="7" width="3.5" height="18" fill="#c44b1b"/>
+</svg>

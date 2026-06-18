@@ -36,7 +36,10 @@ export const metadata: Metadata = {
   description:
     'The verified B2B discovery and AI-mediated deal platform. Find global business partners, connect instantly, and transact securely — without leaving.',
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/icon.svg',
   },
 }
 

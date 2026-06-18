@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" fill="#111111"/>
+  <!-- N lettermark with accent right stroke -->
+  <rect x="88" y="104" width="56" height="304" fill="#ffffff"/>
+  <polygon points="88,104 144,104 368,408 312,408" fill="#ffffff"/>
+  <rect x="312" y="104" width="56" height="304" fill="#c44b1b"/>
+  <!-- B2B dot — accent square bottom right -->
+  <rect x="364" y="364" width="60" height="60" fill="#c44b1b"/>
+</svg>

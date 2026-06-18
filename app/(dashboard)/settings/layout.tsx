@@ -6,6 +6,7 @@ import { Suspense } from 'react'
 const TABS = [
   { label: 'Account',        href: '/settings/account?tab=account' },
   { label: 'Business',       href: '/settings/account?tab=business' },
+  { label: 'Data & Exports', href: '/settings/data' },
   { label: 'Privacy Policy', href: '/settings/policies' },
   { label: 'Contact Us',     href: '/settings/contact' },
 ]
@@ -56,11 +57,6 @@ function TabBar() {
   )
 }
 
-// Image for the right panel — generate with this prompt:
-// "Minimalist abstract business network illustration. Dark charcoal background.
-//  Interconnected geometric nodes and lines glowing in rust-orange (#c44b1b).
-//  Premium, editorial, no text, no humans. Vertical 3:4 aspect ratio."
-// Then set NEXT_PUBLIC_SETTINGS_IMAGE_URL in .env and replace the placeholder below.
 const SETTINGS_IMAGE = process.env.NEXT_PUBLIC_SETTINGS_IMAGE_URL ?? ''
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
@@ -99,8 +95,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
               <div style={{ position: 'absolute', width: 16, height: 16, border: '2px solid #c44b1b', bottom: 0, left: 0 }} />
               <div style={{ position: 'absolute', width: 16, height: 16, background: '#c44b1b', bottom: 0, right: 0 }} />
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--nx-muted)', textAlign: 'center', lineHeight: 1.8 }}>
-              Add your image<br />via<br />NEXT_PUBLIC_<br />SETTINGS_IMAGE_URL
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--nx-muted)', textAlign: 'center' }}>
+              NexusB2B
             </div>
           </div>
         )}

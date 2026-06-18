@@ -25,6 +25,12 @@ export const TRUST_LINKS = [
   { label: 'Status', href: '/status' },
 ]
 
+export const SUPPORT_LINKS = [
+  { label: 'Help Center', href: '/help' },
+  { label: 'Support', href: '/support' },
+  { label: 'Contact', href: '/contact' },
+]
+
 function NxMark({ size = 22 }: { size?: number }) {
   const dot = Math.round(size * 0.32)
   return (
@@ -96,12 +102,13 @@ export function MarketingFooter({ theme, toggleTheme }: { theme: string; toggleT
   const columns: { title: string; links: { label: string; href: string }[] }[] = [
     { title: 'Platform', links: PLATFORM_LINKS },
     { title: 'Company', links: COMPANY_LINKS },
+    { title: 'Support', links: SUPPORT_LINKS },
     { title: 'Trust', links: TRUST_LINKS },
   ]
   return (
     <div style={{ borderTop: '1px solid var(--nx-border)' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '56px 24px 40px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', gap: 32, paddingBottom: 48, borderBottom: '1px solid var(--nx-line)' }} className="nx-footer-grid">
+        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 1fr', gap: 32, paddingBottom: 48, borderBottom: '1px solid var(--nx-line)' }} className="nx-footer-grid">
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 18 }}>
               <NxMark size={22} />
