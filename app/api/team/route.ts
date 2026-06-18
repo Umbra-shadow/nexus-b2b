@@ -11,7 +11,7 @@ export async function GET(_req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const members = await query(
-    `SELECT id, name, email, role, is_active, created_at
+    `SELECT id, name, email, role, is_active, email_verified, created_at
      FROM users
      WHERE business_id = $1
      ORDER BY created_at ASC`,

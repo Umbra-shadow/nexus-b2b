@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { NavDropdown, NAV_MENUS } from './NavDropdowns'
 
 export const PLATFORM_LINKS = [
   { label: 'Discovery', href: '/platform/discovery' },
@@ -37,9 +38,9 @@ function NxMark({ size = 22 }: { size?: number }) {
 }
 
 export function useNxTheme(): [string, () => void] {
-  const [theme, setTheme] = useState('dark')
+  const [theme, setTheme] = useState('light')
   useEffect(() => {
-    const saved = localStorage.getItem('nx-theme') || 'dark'
+    const saved = localStorage.getItem('nx-theme') || 'light'
     setTheme(saved)
     document.documentElement.setAttribute('data-theme', saved)
   }, [])
@@ -60,7 +61,7 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
     <div style={{ minHeight: '100vh', background: 'var(--nx-bg)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px', width: '100%' }}>
         {/* Nav */}
-        <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 80, borderBottom: '1px solid var(--nx-border)', flexWrap: 'wrap', gap: 16 }}>
+        <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 60, borderBottom: '1px solid var(--nx-border)', gap: 16 }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
             <NxMark size={26} />
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 24, letterSpacing: '0.18em', color: 'var(--nx-fg-strong)' }}>
@@ -68,8 +69,10 @@ export function MarketingShell({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-            <Link href="/platform/discovery" style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', textDecoration: 'none' }}>Platform</Link>
-            <Link href="/platform/verification" style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', textDecoration: 'none' }}>Verification</Link>
+            <Link href="/" style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', textDecoration: 'none' }}>Home</Link>
+            {NAV_MENUS.map((m) => (
+              <NavDropdown key={m.label} label={m.label} items={m.items} />
+            ))}
             <button onClick={toggleTheme} title="Toggle theme" style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--nx-muted)', border: '1px solid var(--nx-border)', padding: '6px 10px', background: 'none', cursor: 'pointer', lineHeight: 1 }}>
               {themeGlyph}
             </button>

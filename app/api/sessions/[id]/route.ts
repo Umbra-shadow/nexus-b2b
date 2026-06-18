@@ -3,6 +3,8 @@ import { auth } from '@/lib/auth/session'
 import { queryOne } from '@/lib/db/aurora'
 import { getPresignedUrl } from '@/lib/s3/upload'
 
+const APP_URL = (process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '')
+
 interface Params { params: Promise<{ id: string }> }
 
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -13,7 +15,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const row = await queryOne<Record<string, unknown>>(
     `SELECT
-       s.*,
+       s.*, s.invitation_token,
        ib.id as ib_id, ib.name as ib_name, ib.slug as ib_slug, ib.industry as ib_industry,
        ib.country as ib_country, ib.city as ib_city, ib.website as ib_website,
        ib.description as ib_description, ib.services as ib_services, ib.logo_s3_key as ib_logo,
@@ -43,6 +45,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
     row.rb_logo ? getPresignedUrl(row.rb_logo as string) : null,
   ])
 
+  const isInitiator = row.ib_id === uid
+
   const shaped = {
     id: row.id,
     status: row.status,
@@ -54,6 +58,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
     acceptedAt: row.accepted_at,
     closedAt: row.closed_at,
     selectedServices: row.selected_services ?? [],
+    // Only expose invitation URL to the initiator while session is still pending
+    invitationUrl: (isInitiator && row.status === 'pending' && row.invitation_token)
+      ? `${APP_URL}/sessions/accept/${row.invitation_token}`
+      : null,
     initiatorBusiness: { id: row.ib_id, name: row.ib_name, slug: row.ib_slug, industry: row.ib_industry, country: row.ib_country, city: row.ib_city, website: row.ib_website, description: row.ib_description, services: row.ib_services ?? [], logoUrl: ibLogoUrl },
     receiverBusiness: { id: row.rb_id, name: row.rb_name, slug: row.rb_slug, industry: row.rb_industry, country: row.rb_country, city: row.rb_city, website: row.rb_website, description: row.rb_description, services: row.rb_services ?? [], logoUrl: rbLogoUrl },
     initiatorAgent: { id: row.ia_id, name: row.ia_name, email: row.ia_email },

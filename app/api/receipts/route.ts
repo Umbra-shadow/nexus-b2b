@@ -4,20 +4,36 @@ import { query, queryOne } from '@/lib/db/aurora'
 import { putMessage } from '@/lib/db/dynamo'
 import { CreateReceiptSchema } from '@/lib/validators'
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const receipts = await query(
-    `SELECT r.id, r.status, r.total, r.currency, r.created_at,
-            ib.name as issuer_name, rb.name as receiver_name
-     FROM receipts r
-     JOIN businesses ib ON ib.id = r.issuer_business_id
-     JOIN businesses rb ON rb.id = r.receiver_business_id
-     WHERE r.issuer_business_id = $1 OR r.receiver_business_id = $1
-     ORDER BY r.created_at DESC`,
-    [session.user.businessId]
-  )
+  const { searchParams } = new URL(req.url)
+  const sessionId = searchParams.get('sessionId')
+
+  // When a sessionId is provided (session room), only return receipts for that session
+  const receipts = sessionId
+    ? await query(
+        `SELECT r.id, r.status, r.total, r.currency, r.created_at,
+                ib.name as issuer_name, rb.name as receiver_name
+         FROM receipts r
+         JOIN businesses ib ON ib.id = r.issuer_business_id
+         JOIN businesses rb ON rb.id = r.receiver_business_id
+         WHERE r.session_id = $1
+           AND (r.issuer_business_id = $2 OR r.receiver_business_id = $2)
+         ORDER BY r.created_at DESC`,
+        [sessionId, session.user.businessId]
+      )
+    : await query(
+        `SELECT r.id, r.status, r.total, r.currency, r.created_at,
+                ib.name as issuer_name, rb.name as receiver_name
+         FROM receipts r
+         JOIN businesses ib ON ib.id = r.issuer_business_id
+         JOIN businesses rb ON rb.id = r.receiver_business_id
+         WHERE r.issuer_business_id = $1 OR r.receiver_business_id = $1
+         ORDER BY r.created_at DESC`,
+        [session.user.businessId]
+      )
 
   return NextResponse.json({ receipts })
 }

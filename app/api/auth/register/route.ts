@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { query, queryOne, transaction } from '@/lib/db/aurora'
 import { createVerificationToken } from '@/lib/auth/tokens'
-import { sendVerificationEmail } from '@/lib/email/ses'
+import { sendVerificationEmail, sendNewBusinessNotification } from '@/lib/email/ses'
 import { uploadFile, buildLogoKey, buildDocKey } from '@/lib/s3/upload'
 import { slugify } from '@/lib/utils'
 import { RegisterBusinessSchema, RegisterUserServerSchema } from '@/lib/validators'
@@ -28,12 +28,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid user data', details: userData.error.flatten() }, { status: 422 })
     }
 
-    const { businessName, industry, country, city, website, description, services } = bizData.data
+    const { businessName, contactEmail, industry, country, city, website, description, services } = bizData.data
     const { name, email, password } = userData.data
 
     const existingUser = await queryOne(`SELECT id FROM users WHERE email = $1`, [email])
     if (existingUser) {
       return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 })
+    }
+
+    const existingBusiness = await queryOne(
+      `SELECT id FROM businesses WHERE LOWER(name) = LOWER($1)`,
+      [businessName]
+    )
+    if (existingBusiness) {
+      return NextResponse.json({ error: 'A business with this name is already registered. Please use a unique name.' }, { status: 409 })
     }
 
     const baseSlug = slugify(businessName)
@@ -54,10 +62,10 @@ export async function POST(req: NextRequest) {
 
     const { businessId, userId, token } = await transaction(async (client) => {
       const bizRes = await client.query(
-        `INSERT INTO businesses (name, slug, industry, country, city, website, description, services)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `INSERT INTO businesses (name, slug, industry, country, city, website, description, services, contact_email)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          RETURNING id`,
-        [businessName, slug, industry, country, city ?? null, website ?? null, description ?? null, services ?? []]
+        [businessName, slug, industry, country, city ?? null, website ?? null, description ?? null, services ?? [], contactEmail]
       )
       const businessId = bizRes.rows[0].id as string
 
@@ -93,11 +101,27 @@ export async function POST(req: NextRequest) {
       await query(`UPDATE businesses SET verification_doc_s3_key = $1 WHERE id = $2`, [docS3Key, businessId])
     }
 
-    // Email send is best-effort — SES may be in sandbox; don't fail registration over it
+    // Both emails are best-effort — don't fail registration if Resend is in sandbox
     try {
       await sendVerificationEmail(email, name, token)
     } catch (emailErr) {
-      console.warn('[register] email send failed (SES sandbox?):', emailErr)
+      console.warn('[register] verification email failed:', emailErr)
+    }
+
+    try {
+      await sendNewBusinessNotification({
+        businessId,
+        businessName,
+        industry,
+        country,
+        city: city ?? null,
+        website: website ?? null,
+        contactEmail,
+        adminName: name,
+        adminEmail: email,
+      })
+    } catch (emailErr) {
+      console.warn('[register] admin notification email failed:', emailErr)
     }
 
     return NextResponse.json({ success: true, message: 'Registration complete. Check your email to verify your account.' })

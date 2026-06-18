@@ -32,7 +32,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         )
 
         if (!user || !user.is_active) return null
-        if (!user.email_verified) return null
 
         const valid = await bcrypt.compare(credentials.password as string, user.password_hash)
         if (!valid) return null
@@ -43,6 +42,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           role: user.role,
           businessId: user.business_id,
+          emailVerified: user.email_verified,
         }
       },
     }),
@@ -52,14 +52,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.role = (user as User).role
         token.businessId = (user as User).businessId
+        token.emailVerified = (user as User).emailVerified
+        token.hydrated = true
       }
+
+      // Refresh stale JWT fields from DB:
+      //  - !hydrated: old JWT issued before these fields existed (businessId missing)
+      //  - emailVerified === false: re-check so verification takes effect without re-login
+      if (token.sub && (!token.hydrated || token.emailVerified === false)) {
+        const fresh = await queryOne<{
+          business_id: string | null
+          role: string
+          email_verified: boolean
+        }>(
+          `SELECT business_id, role, email_verified FROM users WHERE id = $1`,
+          [token.sub]
+        )
+        if (fresh) {
+          if (!token.hydrated) {
+            token.businessId = fresh.business_id ?? ''
+            token.role = fresh.role
+          }
+          token.emailVerified = fresh.email_verified
+          token.hydrated = true
+        }
+      }
+
       return token
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.sub!
-        session.user.role = (token.role ?? '') as string
-        session.user.businessId = (token.businessId ?? '') as string
+        const u = session.user as unknown as Record<string, unknown>
+        u.id = token.sub!
+        u.role = token.role ?? ''
+        u.businessId = token.businessId ?? ''
+        u.emailVerified = token.emailVerified ?? false
       }
       return session
     },

@@ -39,7 +39,14 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Invitation has expired' }, { status: 400 })
   }
 
-  if (row.receiver_business_id !== session.user.businessId) {
+  // Re-fetch business_id from DB to avoid stale JWT issues
+  const userRecord = await queryOne<{ business_id: string | null }>(
+    `SELECT business_id FROM users WHERE id = $1`,
+    [session.user.id]
+  )
+  const userBusinessId = userRecord?.business_id ?? session.user.businessId
+
+  if (row.receiver_business_id !== userBusinessId) {
     return NextResponse.json({ error: 'This invitation is for a different business' }, { status: 403 })
   }
 

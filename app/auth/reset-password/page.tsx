@@ -40,10 +40,15 @@ export default function ResetPasswordPage() {
   } = useForm<FormData>({ resolver: zodResolver(Schema) })
 
   async function onSubmit(data: FormData) {
-    // In the demo build we just acknowledge the request — no email is sent
-    await new Promise((r) => setTimeout(r, 800))
-    setSubmittedEmail(data.email)
-    setSent(true)
+    const res = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: data.email }),
+    })
+    if (res.ok) {
+      setSubmittedEmail(data.email)
+      setSent(true)
+    }
   }
 
   return (
@@ -92,13 +97,6 @@ export default function ResetPasswordPage() {
               </button>
             </form>
 
-            {/* Demo note */}
-            <div style={{ border: '1px solid var(--nx-border)', padding: '12px 16px', marginTop: 20 }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c8a240', marginBottom: 4 }}>Demo build</div>
-              <p style={{ fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--nx-muted)', lineHeight: 1.5 }}>
-                This is a hackathon demo — no email is sent. Use <strong style={{ color: 'var(--nx-fg)' }}>admin@meridian.io</strong> / <strong style={{ color: 'var(--nx-fg)' }}>demo1234</strong> to sign in directly.
-              </p>
-            </div>
           </>
         ) : (
           /* ── Sent confirmation ── */

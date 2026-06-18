@@ -235,10 +235,18 @@ export default function RegisterPage() {
                 <p style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-muted)', lineHeight: 1.6 }}>Tell us about your company. All registrations are verified before appearing in search.</p>
               </div>
 
-              <div>
-                <label style={labelStyle}>Business name *</label>
-                <input placeholder="Acme Corporation" className="nx-input nx-input-sm" {...bizForm.register('businessName')} />
-                {bizForm.formState.errors.businessName && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#c44b1b', marginTop: 4 }}>{bizForm.formState.errors.businessName.message}</div>}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div>
+                  <label style={labelStyle}>Business name *</label>
+                  <input placeholder="Acme Corporation" className="nx-input nx-input-sm" {...bizForm.register('businessName')} />
+                  {bizForm.formState.errors.businessName && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#c44b1b', marginTop: 4 }}>{bizForm.formState.errors.businessName.message}</div>}
+                </div>
+                <div>
+                  <label style={labelStyle}>Business contact email *</label>
+                  <input type="email" placeholder="info@acme.com" className="nx-input nx-input-sm" {...bizForm.register('contactEmail')} />
+                  {bizForm.formState.errors.contactEmail && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#c44b1b', marginTop: 4 }}>{bizForm.formState.errors.contactEmail.message}</div>}
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--nx-muted)', marginTop: 4, letterSpacing: '0.06em' }}>Used for session invitations and partner outreach</div>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>

@@ -1,139 +1,309 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth/session'
 import { query } from '@/lib/db/aurora'
-import Link from 'next/link'
-import { CheckCircle, XCircle, Clock } from 'lucide-react'
-import { Avatar } from '@/components/shared/Avatar'
-import { IndustryBadge } from '@/components/shared/IndustryBadge'
-import { Button } from '@/components/ui/button'
 import { formatDate } from '@/lib/utils'
+import { EmailDiagnostic } from '@/components/admin/EmailDiagnostic'
 
-export const metadata = { title: 'Admin — NexusB2B' }
+export const metadata = { title: 'Operations — System Admin' }
 
-interface PendingBusiness {
-  id: string
-  name: string
-  slug: string
-  industry: string
-  country: string
-  city: string | null
-  description: string | null
-  website: string | null
-  created_at: string
-  admin_email: string
-  admin_name: string
+interface Stats {
+  total_businesses: string
+  verified_businesses: string
+  pending_verification: string
+  total_users: string
+  active_sessions: string
+  total_receipts: string
 }
 
-export default async function AdminPage() {
+interface RecentBusiness {
+  name: string
+  verification_status: string
+  industry: string
+  country: string
+  created_at: string
+}
+
+interface RecentSession {
+  id: string
+  status: string
+  created_at: string
+  initiator_name: string
+  receiver_name: string
+}
+
+const STATUS_COLOR: Record<string, string> = {
+  verified: '#5a9a7a',
+  pending: '#c44b1b',
+  rejected: 'var(--nx-muted)',
+  active: '#5a9a7a',
+  closed: 'var(--nx-muted)',
+}
+
+const STATUS_BORDER: Record<string, string> = {
+  verified: 'rgba(90,154,122,0.35)',
+  pending: 'rgba(196,75,27,0.35)',
+  rejected: 'var(--nx-border)',
+  active: 'rgba(90,154,122,0.35)',
+  closed: 'var(--nx-border)',
+}
+
+function getInitials(name: string) {
+  return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)
+}
+
+export default async function AdminOverviewPage() {
   const session = await auth()
   if (!session?.user) redirect('/auth/login')
+  if (session.user.email !== process.env.PLATFORM_ADMIN_EMAIL && session.user.role !== 'system_admin') redirect('/dashboard')
 
-  const PLATFORM_ADMIN_EMAIL = process.env.PLATFORM_ADMIN_EMAIL
-  if (session.user.email !== PLATFORM_ADMIN_EMAIL) redirect('/dashboard')
-
-  const [pending, stats] = await Promise.all([
-    query<PendingBusiness>(
-      `SELECT b.id, b.name, b.slug, b.industry, b.country, b.city, b.description, b.website, b.created_at,
-              u.email as admin_email, u.name as admin_name
-       FROM businesses b
-       JOIN users u ON u.business_id = b.id AND u.role = 'business_admin'
-       WHERE b.verification_status = 'pending'
-       ORDER BY b.created_at ASC`
-    ),
-    query<{ total_businesses: string; total_users: string; total_sessions: string }>(
-      `SELECT
-         (SELECT COUNT(*) FROM businesses) as total_businesses,
-         (SELECT COUNT(*) FROM users) as total_users,
-         (SELECT COUNT(*) FROM sessions) as total_sessions`
-    ),
+  const [statsRows, recentBusinesses, recentSessions] = await Promise.all([
+    query<Stats>(`
+      SELECT
+        (SELECT COUNT(*) FROM businesses) as total_businesses,
+        (SELECT COUNT(*) FROM businesses WHERE verification_status = 'verified') as verified_businesses,
+        (SELECT COUNT(*) FROM businesses WHERE verification_status = 'pending') as pending_verification,
+        (SELECT COUNT(*) FROM users) as total_users,
+        (SELECT COUNT(*) FROM sessions WHERE status = 'active') as active_sessions,
+        (SELECT COUNT(*) FROM receipts) as total_receipts
+    `),
+    query<RecentBusiness>(`
+      SELECT b.name, b.verification_status, b.industry, b.country, b.created_at
+      FROM businesses b ORDER BY b.created_at DESC LIMIT 5
+    `),
+    query<RecentSession>(`
+      SELECT s.id, s.status, s.created_at,
+             ib.name as initiator_name, rb.name as receiver_name
+      FROM sessions s
+      JOIN businesses ib ON ib.id = s.initiator_business_id
+      JOIN businesses rb ON rb.id = s.receiver_business_id
+      ORDER BY s.created_at DESC LIMIT 5
+    `),
   ])
 
-  const s = stats[0]
+  const stats = statsRows[0] ?? {} as Stats
+
+  const statCards = [
+    { label: 'Total businesses', value: stats.total_businesses ?? '0', note: 'registered on platform', orange: false },
+    { label: 'Verified businesses', value: stats.verified_businesses ?? '0', note: 'discoverable in network', orange: false },
+    { label: 'Pending verification', value: stats.pending_verification ?? '0', note: 'awaiting review', orange: true },
+    { label: 'Total users', value: stats.total_users ?? '0', note: 'accounts created', orange: false },
+    { label: 'Active sessions', value: stats.active_sessions ?? '0', note: 'live deal rooms', orange: false },
+    { label: 'Total receipts', value: stats.total_receipts ?? '0', note: 'transactions recorded', orange: false },
+  ]
 
   return (
-    <div className="min-h-screen bg-secondary">
-      <div className="container-app py-8 space-y-8">
-        <div>
-          <h1 className="text-heading text-foreground">Platform Admin</h1>
-          <p className="text-muted-foreground mt-1">NexusB2B operations dashboard</p>
+    <div style={{ animation: 'nx-rise 0.4s ease' }}>
+      {/* Demo disclaimer */}
+      <div style={{ padding: '16px 28px', background: 'rgba(196,75,27,0.07)', borderBottom: '1px solid rgba(196,75,27,0.2)' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#c44b1b', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 5 }}>
+          ◈ Live Demonstration — For Judges
+        </div>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--nx-fg)', lineHeight: 1.7, maxWidth: 880 }}>
+          The entire system is operational: AWS Aurora PostgreSQL, DynamoDB, S3, and SES are all live and connected.
+          The businesses, users, and transactions visible here are <strong>fictional data seeded for demonstration purposes</strong> — not real entities.
+          AI responses in deal sessions are powered by Gemini and simulate the receiving business replying autonomously.
+          To test the full flow end-to-end, create two real accounts and open a session between them.{' '}
+          <strong style={{ color: '#c44b1b' }}>A Gemini API key must be entered in the top bar for AI features to function.</strong>
+        </div>
+      </div>
+
+      <div style={{ padding: '36px 40px' }}>
+        <EmailDiagnostic />
+
+        {/* Page header */}
+        <div style={{ marginBottom: 36 }}>
+          <div style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.28em',
+            textTransform: 'uppercase',
+            color: '#c44b1b',
+            marginBottom: 10,
+          }}>
+            / System Admin
+          </div>
+          <h1 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 52,
+            lineHeight: 0.9,
+            color: 'var(--nx-fg-strong)',
+            marginBottom: 0,
+          }}>
+            OPERATIONS
+          </h1>
         </div>
 
-        {/* Stats */}
-        <div className="grid sm:grid-cols-3 gap-4">
-          {[
-            { label: 'Businesses', value: s?.total_businesses ?? 0 },
-            { label: 'Users', value: s?.total_users ?? 0 },
-            { label: 'Sessions', value: s?.total_sessions ?? 0 },
-          ].map((stat) => (
-            <div key={stat.label} className="card-base text-center">
-              <p className="text-3xl font-bold text-foreground">{stat.value}</p>
-              <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
+        {/* Stats grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 1,
+          border: '1px solid var(--nx-border)',
+          marginBottom: 32,
+          background: 'var(--nx-border)',
+        }}>
+          {statCards.map((card) => (
+            <div
+              key={card.label}
+              style={{
+                padding: 24,
+                background: 'var(--nx-panel)',
+              }}
+            >
+              <div style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 9,
+                letterSpacing: '0.22em',
+                textTransform: 'uppercase',
+                color: 'var(--nx-muted)',
+                marginBottom: 14,
+              }}>
+                {card.label}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 52,
+                lineHeight: 0.85,
+                color: card.orange ? '#c44b1b' : 'var(--nx-fg-strong)',
+                marginBottom: 8,
+              }}>
+                {card.value}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 13,
+                color: 'var(--nx-muted)',
+              }}>
+                {card.note}
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Verification queue */}
-        <div className="card-base">
-          <div className="flex items-center gap-2 mb-6">
-            <Clock className="w-5 h-5 text-orange-500" />
-            <h2 className="font-semibold text-foreground">
-              Verification Queue ({pending.length})
-            </h2>
-          </div>
-
-          {pending.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <CheckCircle className="w-8 h-8 mx-auto mb-3 text-green-500" />
-              All caught up — no pending verifications.
+        {/* Two column section */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+          {/* Recent verifications */}
+          <div style={{ border: '1px solid var(--nx-border)' }}>
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid var(--nx-border)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              color: 'var(--nx-fg)',
+            }}>
+              Recent Businesses
             </div>
-          ) : (
-            <div className="space-y-4">
-              {pending.map((biz) => (
-                <div key={biz.id} className="border border-border rounded-lg p-4">
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
-                    <div className="flex items-start gap-3">
-                      <Avatar name={biz.name} size="md" />
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-semibold text-foreground">{biz.name}</p>
-                          <IndustryBadge industry={biz.industry as never} />
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {[biz.city, biz.country].filter(Boolean).join(', ')} ·{' '}
-                          {biz.website && (
-                            <a href={biz.website} target="_blank" rel="noopener noreferrer" className="text-brand-brown hover:underline">
-                              {biz.website}
-                            </a>
-                          )}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Admin: {biz.admin_name} &lt;{biz.admin_email}&gt; · Registered {formatDate(biz.created_at)}
-                        </p>
-                        {biz.description && (
-                          <p className="text-sm text-muted-foreground mt-2">{biz.description}</p>
-                        )}
-                      </div>
+            {recentBusinesses.length === 0 ? (
+              <div style={{ padding: 20, fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-muted)', fontStyle: 'italic' }}>
+                No businesses yet.
+              </div>
+            ) : (
+              recentBusinesses.map((biz, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '12px 20px',
+                    borderBottom: i < recentBusinesses.length - 1 ? '1px solid var(--nx-border)' : undefined,
+                  }}
+                >
+                  <div style={{
+                    width: 32,
+                    height: 32,
+                    border: '1px solid var(--nx-border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 13,
+                    color: 'var(--nx-fg-strong)',
+                    flexShrink: 0,
+                  }}>
+                    {getInitials(biz.name)}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-fg-strong)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {biz.name}
                     </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <form action={`/api/admin/verify/${biz.id}`} method="POST">
-                        <input type="hidden" name="action" value="approve" />
-                        <Button type="submit" size="sm" className="gap-1 bg-green-600 hover:bg-green-700">
-                          <CheckCircle className="w-3.5 h-3.5" /> Approve
-                        </Button>
-                      </form>
-                      <form action={`/api/admin/verify/${biz.id}`} method="POST">
-                        <input type="hidden" name="action" value="reject" />
-                        <Button type="submit" size="sm" variant="destructive" className="gap-1">
-                          <XCircle className="w-3.5 h-3.5" /> Reject
-                        </Button>
-                      </form>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--nx-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: 2 }}>
+                      {biz.industry} · {biz.country}
                     </div>
                   </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                    <span style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      padding: '4px 9px',
+                      border: `1px solid ${STATUS_BORDER[biz.verification_status] ?? 'var(--nx-border)'}`,
+                      color: STATUS_COLOR[biz.verification_status] ?? 'var(--nx-muted)',
+                    }}>
+                      {biz.verification_status}
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--nx-muted)', letterSpacing: '0.06em' }}>
+                      {formatDate(biz.created_at)}
+                    </span>
+                  </div>
                 </div>
-              ))}
+              ))
+            )}
+          </div>
+
+          {/* Recent sessions */}
+          <div style={{ border: '1px solid var(--nx-border)' }}>
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid var(--nx-border)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              color: 'var(--nx-fg)',
+            }}>
+              Recent Sessions
             </div>
-          )}
+            {recentSessions.length === 0 ? (
+              <div style={{ padding: 20, fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-muted)', fontStyle: 'italic' }}>
+                No sessions yet.
+              </div>
+            ) : (
+              recentSessions.map((s, i) => (
+                <div
+                  key={s.id}
+                  style={{
+                    padding: '12px 20px',
+                    borderBottom: i < recentSessions.length - 1 ? '1px solid var(--nx-border)' : undefined,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 3 }}>
+                    <div style={{ fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--nx-fg-strong)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {s.initiator_name} → {s.receiver_name}
+                    </div>
+                    <span style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 10,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      padding: '4px 9px',
+                      border: `1px solid ${STATUS_BORDER[s.status] ?? 'var(--nx-border)'}`,
+                      color: STATUS_COLOR[s.status] ?? 'var(--nx-muted)',
+                      flexShrink: 0,
+                    }}>
+                      {s.status}
+                    </span>
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--nx-muted)', letterSpacing: '0.06em' }}>
+                    {formatDate(s.created_at)}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

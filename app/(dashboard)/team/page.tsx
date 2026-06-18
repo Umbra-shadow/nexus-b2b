@@ -10,6 +10,7 @@ interface Member {
   email: string
   role: string
   is_active: boolean
+  email_verified: boolean
   created_at: string
   session_count?: number
   message_count?: number
@@ -48,6 +49,8 @@ export default function TeamPage() {
   const [inviting, setInviting] = useState(false)
   const [inviteMsg, setInviteMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
   const [businessName, setBusinessName] = useState('Team')
+  const [resendingId, setResendingId] = useState<string | null>(null)
+  const [resendResult, setResendResult] = useState<{ id: string; type: 'ok' | 'err'; text: string } | null>(null)
 
   const isAdmin = session?.user?.role === 'business_admin'
 
@@ -96,6 +99,24 @@ export default function TeamPage() {
       body: JSON.stringify({ isActive: !active }),
     })
     fetchMembers()
+  }
+
+  async function handleResendInvite(memberId: string, email: string) {
+    setResendingId(memberId)
+    setResendResult(null)
+    const res = await fetch(`/api/team/${memberId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'resend_invite' }),
+    })
+    setResendingId(null)
+    const json = await res.json()
+    if (res.ok) {
+      setResendResult({ id: memberId, type: 'ok', text: `Invite sent to ${email}` })
+    } else {
+      setResendResult({ id: memberId, type: 'err', text: json.error ?? 'Failed to send invite' })
+    }
+    setTimeout(() => setResendResult(null), 6000)
   }
 
   const activeCount = members.filter((m) => m.is_active).length
@@ -205,10 +226,32 @@ export default function TeamPage() {
                     Last active<br />
                     <span style={{ color: 'var(--nx-fg)' }}>{timeAgo(m.created_at)}</span>
                   </div>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: act ? '#5a9a7a' : 'var(--nx-muted)', border: `1px solid ${act ? '#274a3a' : 'var(--nx-strong)'}`, padding: '4px 8px' }}>
-                    {act ? 'Active' : 'Deactivated'}
-                  </span>
-                  {isAdmin && m.id !== session?.user?.id && (
+                  {!m.email_verified ? (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#c8a240', border: '1px solid rgba(200,162,64,0.4)', padding: '4px 8px' }}>
+                      Invite pending
+                    </span>
+                  ) : (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: act ? '#5a9a7a' : 'var(--nx-muted)', border: `1px solid ${act ? '#274a3a' : 'var(--nx-strong)'}`, padding: '4px 8px' }}>
+                      {act ? 'Active' : 'Deactivated'}
+                    </span>
+                  )}
+                  {isAdmin && m.id !== session?.user?.id && !m.email_verified && (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, maxWidth: 280 }}>
+                      <button
+                        onClick={() => handleResendInvite(m.id, m.email)}
+                        disabled={resendingId === m.id}
+                        style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#c44b1b', background: 'none', border: '1px solid rgba(196,75,27,0.3)', padding: '4px 10px', cursor: resendingId === m.id ? 'not-allowed' : 'pointer', opacity: resendingId === m.id ? 0.6 : 1, whiteSpace: 'nowrap' }}
+                      >
+                        {resendingId === m.id ? '…' : '↺ Resend invite'}
+                      </button>
+                      {resendResult?.id === m.id && (
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: resendResult.type === 'ok' ? '#5a9a7a' : '#c44b1b', textAlign: 'right' }}>
+                          {resendResult.text}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {isAdmin && m.id !== session?.user?.id && m.email_verified && (
                     <button
                       onClick={() => toggleActive(m.id, m.is_active)}
                       style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: act ? 'var(--nx-muted)' : '#c44b1b', background: 'none', border: 'none', cursor: 'pointer' }}

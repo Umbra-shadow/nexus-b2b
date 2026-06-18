@@ -72,8 +72,11 @@ export async function POST(req: NextRequest) {
   )
 
   // Check if receiver is a demo company (no registered users)
-  const receiverAdmin = await queryOne<{ email: string }>(
-    `SELECT email FROM users WHERE business_id = $1 AND role = 'business_admin' LIMIT 1`,
+  // Prefer the business contact_email for invitations; fall back to admin's personal email
+  const receiverAdmin = await queryOne<{ email: string; contact_email: string | null }>(
+    `SELECT u.email, b.contact_email
+     FROM users u JOIN businesses b ON b.id = u.business_id
+     WHERE u.business_id = $1 AND u.role = 'business_admin' LIMIT 1`,
     [receiverBusinessId]
   )
 
@@ -106,14 +109,19 @@ export async function POST(req: NextRequest) {
     await putSystemMessage(newSession.id, intro, 'ai_response')
     await query(`UPDATE sessions SET ai_introduced = true WHERE id = $1`, [newSession.id])
   } else {
-    await sendSessionInvitation({
-      to: receiverAdmin!.email,
-      inviterBusinessName: initiatorBusiness?.name ?? 'A business',
-      inviterDescription: initiatorBusiness?.description ?? '',
-      receiverBusinessName: receiverBusiness.name,
-      searchContext: searchContext ?? undefined,
-      token,
-    })
+    // Best-effort — session is already committed; don't fail the whole request over email
+    try {
+      await sendSessionInvitation({
+        to: receiverAdmin!.contact_email ?? receiverAdmin!.email,
+        inviterBusinessName: initiatorBusiness?.name ?? 'A business',
+        inviterDescription: initiatorBusiness?.description ?? '',
+        receiverBusinessName: receiverBusiness.name,
+        searchContext: searchContext ?? undefined,
+        token,
+      })
+    } catch (emailErr) {
+      console.error('[sessions/create] invitation email failed (Resend sandbox?):', emailErr)
+    }
   }
 
   return NextResponse.json({ sessionId: newSession.id, isDemoSession: isDemoReceiver }, { status: 201 })

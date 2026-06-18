@@ -7,6 +7,7 @@ export const INDUSTRIES = [
 
 export const RegisterBusinessSchema = z.object({
   businessName: z.string().min(2).max(100),
+  contactEmail: z.string().email('Enter a valid business email'),
   industry: z.enum(INDUSTRIES),
   country: z.string().length(2),
   city: z.string().max(100).optional(),
@@ -68,6 +69,7 @@ export const InviteTeamSchema = z.object({
 
 export const UpdateBusinessSchema = z.object({
   name: z.string().min(2).max(100).optional(),
+  contactEmail: z.string().email().optional().or(z.literal('')),
   description: z.string().max(500).optional(),
   city: z.string().max(100).optional(),
   website: z.string().url().optional().or(z.literal('')),

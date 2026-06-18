@@ -63,6 +63,14 @@ export default function SessionPage() {
   const [lummyMessages, setLummyMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([])
   const [lummyLoading, setLummyLoading] = useState(false)
   const [closing, setClosing] = useState(false)
+  const [confirmingClose, setConfirmingClose] = useState(false)
+  const [invitationUrl, setInvitationUrl] = useState<string | null>(null)
+  const [copiedLink, setCopiedLink] = useState(false)
+  const [resendingInvite, setResendingInvite] = useState(false)
+  const [resendInviteStatus, setResendInviteStatus] = useState<'idle' | 'sent' | 'error'>('idle')
+  const [resendInviteError, setResendInviteError] = useState('')
+  const [confirmingCancel, setConfirmingCancel] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
   // Attachment panel
   const [showAttachMenu, setShowAttachMenu] = useState(false)
   const [uploadingDoc, setUploadingDoc] = useState(false)
@@ -89,6 +97,7 @@ export default function SessionPage() {
     if (res.ok) {
       const json = await res.json()
       setSession(json.session)
+      if (json.session.invitationUrl) setInvitationUrl(json.session.invitationUrl)
     }
   }, [sessionId])
 
@@ -226,6 +235,56 @@ export default function SessionPage() {
     }
   }
 
+  async function resendInvitation() {
+    setResendingInvite(true)
+    setResendInviteStatus('idle')
+    setResendInviteError('')
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/resend-invitation`, { method: 'POST' })
+      const json = await res.json()
+      if (res.ok) {
+        setResendInviteStatus('sent')
+      } else {
+        setResendInviteStatus('error')
+        setResendInviteError(json.error ?? 'Failed to send.')
+      }
+    } catch {
+      setResendInviteStatus('error')
+      setResendInviteError('Network error. Please try again.')
+    } finally {
+      setResendingInvite(false)
+    }
+  }
+
+  async function cancelInvitation() {
+    setCancelling(true)
+    try {
+      const res = await fetch(`/api/sessions/${sessionId}/cancel`, { method: 'POST' })
+      if (res.ok) {
+        router.push('/sessions')
+      } else {
+        const json = await res.json()
+        alert(json.error ?? 'Could not cancel invitation.')
+        setCancelling(false)
+        setConfirmingCancel(false)
+      }
+    } catch {
+      setCancelling(false)
+      setConfirmingCancel(false)
+    }
+  }
+
+  async function copyInviteLink() {
+    if (!invitationUrl) return
+    try {
+      await navigator.clipboard.writeText(invitationUrl)
+      setCopiedLink(true)
+      setTimeout(() => setCopiedLink(false), 2500)
+    } catch {
+      // fallback: select text
+    }
+  }
+
   async function createReceipt() {
     const validItems = rcItems.filter(i => i.description.trim() && parseFloat(i.unitPrice) > 0)
     if (validItems.length === 0) { setRcError('Add at least one line item with a description and price.'); return }
@@ -302,8 +361,8 @@ export default function SessionPage() {
   const statusColor: Record<string, string> = { active: '#5a9a7a', pending: '#c8a240', closed: 'var(--nx-muted)' }
   const sxStatusColor = statusColor[session.status] ?? 'var(--nx-muted)'
 
-  // Detect if demo session (receiver has no real users — indicated by presence of demo: sender_id)
-  const isDemo = messages.some((m) => m.sender_id?.startsWith('demo:') || m.type === 'system')
+  // Detect if demo session: only when the other side's messages come from a 'demo:*' sender
+  const isDemo = messages.some((m) => m.sender_id?.startsWith('demo:'))
 
   return (
     <div style={{ display: 'flex', height: 'calc(100vh - 64px)' }}>
@@ -337,17 +396,31 @@ export default function SessionPage() {
               >
                 ＋ Receipt
               </button>
-              <button
-                onClick={() => {
-                  if (window.confirm('Close this session? This is permanent — both parties will lose the ability to send messages.')) {
-                    closeSession()
-                  }
-                }}
-                disabled={closing}
-                style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-muted)', background: 'none', padding: '10px 14px', border: '1px solid var(--nx-border)', cursor: closing ? 'not-allowed' : 'pointer', opacity: closing ? 0.5 : 1 }}
-              >
-                {closing ? 'Closing…' : 'Close session'}
-              </button>
+              {confirmingClose ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid rgba(196,75,27,0.4)', padding: '6px 10px', background: 'rgba(196,75,27,0.06)' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--nx-fg)', whiteSpace: 'nowrap' }}>Close permanently?</span>
+                  <button
+                    onClick={() => { setConfirmingClose(false); closeSession() }}
+                    disabled={closing}
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#fff', background: '#c44b1b', border: 'none', padding: '5px 10px', cursor: closing ? 'not-allowed' : 'pointer', opacity: closing ? 0.5 : 1, whiteSpace: 'nowrap' }}
+                  >
+                    {closing ? '…' : '✕ Yes, close'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmingClose(false)}
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--nx-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '5px 8px', whiteSpace: 'nowrap' }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmingClose(true)}
+                  style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-muted)', background: 'none', padding: '10px 14px', border: '1px solid var(--nx-border)', cursor: 'pointer' }}
+                >
+                  Close session
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -362,11 +435,89 @@ export default function SessionPage() {
 
         {/* Messages area */}
         <div style={{ flex: 1, overflowY: 'auto', padding: 28, display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {messages.length === 0 && !loading && (
+          {messages.length === 0 && !loading && session.status !== 'pending' && (
             <div style={{ textAlign: 'center', padding: '60px 0', fontFamily: 'var(--font-serif)', fontSize: 17, color: 'var(--nx-muted)' }}>
-              {session.status === 'pending'
-                ? 'Waiting for the other party to accept the invitation…'
-                : 'Session started. Say hello!'}
+              Session started. Say hello!
+            </div>
+          )}
+
+          {/* Pending invitation panel — shown until the other party accepts */}
+          {session.status === 'pending' && isInitiator && (
+            <div style={{ margin: '32px auto', width: '100%', maxWidth: 540, border: '1px solid var(--nx-border)', background: 'var(--nx-raised)', padding: 28, display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#c8a240', marginBottom: 8 }}>◈ Awaiting acceptance</div>
+                <p style={{ fontFamily: 'var(--font-serif)', fontSize: 16, color: 'var(--nx-fg)', lineHeight: 1.65, margin: 0 }}>
+                  An invitation was sent to <strong style={{ color: 'var(--nx-fg-strong)' }}>{theirBusiness.name}</strong>. The session opens the moment they accept.
+                  If the email didn&apos;t arrive, share the link below directly.
+                </p>
+              </div>
+
+              {invitationUrl && (
+                <div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 8 }}>Invitation link</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ flex: 1, background: 'var(--nx-panel)', border: '1px solid var(--nx-line)', padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--nx-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+                      {invitationUrl}
+                    </div>
+                    <button
+                      onClick={copyInviteLink}
+                      style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', padding: '10px 16px', border: copiedLink ? '1px solid #5a9a7a' : '1px solid var(--nx-border)', background: copiedLink ? 'rgba(90,154,122,0.12)' : 'var(--nx-panel)', color: copiedLink ? '#5a9a7a' : 'var(--nx-fg)', cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s' }}
+                    >
+                      {copiedLink ? '✓ Copied' : 'Copy →'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <button
+                    onClick={resendInvitation}
+                    disabled={resendingInvite || resendInviteStatus === 'sent'}
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', padding: '10px 18px', border: '1px solid var(--nx-border)', background: 'none', color: resendInviteStatus === 'sent' ? '#5a9a7a' : 'var(--nx-fg)', cursor: (resendingInvite || resendInviteStatus === 'sent') ? 'not-allowed' : 'pointer', opacity: resendingInvite ? 0.6 : 1 }}
+                  >
+                    {resendingInvite ? 'Sending…' : resendInviteStatus === 'sent' ? '✓ Invitation sent' : '↺ Resend invitation email'}
+                  </button>
+                  {resendInviteStatus === 'error' && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#c44b1b', letterSpacing: '0.04em' }}>
+                      ✕ {resendInviteError}
+                    </span>
+                  )}
+                </div>
+
+                {/* Cancel invitation — right-aligned, two-step confirm */}
+                {confirmingCancel ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--nx-muted)', whiteSpace: 'nowrap' }}>Withdraw invitation?</span>
+                    <button
+                      onClick={cancelInvitation}
+                      disabled={cancelling}
+                      style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '6px 12px', border: 'none', background: '#c44b1b', color: '#fff', cursor: cancelling ? 'not-allowed' : 'pointer', opacity: cancelling ? 0.6 : 1, whiteSpace: 'nowrap' }}
+                    >
+                      {cancelling ? '…' : '✕ Yes, cancel'}
+                    </button>
+                    <button
+                      onClick={() => setConfirmingCancel(false)}
+                      style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--nx-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 8px', whiteSpace: 'nowrap' }}
+                    >
+                      Keep
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmingCancel(true)}
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', padding: '10px 16px', border: '1px solid rgba(196,75,27,0.3)', background: 'none', color: '#c44b1b', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    ✕ Cancel invitation
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {session.status === 'pending' && !isInitiator && (
+            <div style={{ textAlign: 'center', padding: '60px 0', fontFamily: 'var(--font-serif)', fontSize: 17, color: 'var(--nx-muted)' }}>
+              You have been invited to this session. Accept via your invitation link to begin.
             </div>
           )}
 

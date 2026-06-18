@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { signIn } from 'next-auth/react'
+import { signIn, getSession } from 'next-auth/react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff } from 'lucide-react'
@@ -49,9 +49,9 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({ resolver: zodResolver(LoginSchema) })
 
-  function fillDemo() {
-    setValue('email', 'admin@meridian.io')
-    setValue('password', 'demo1234')
+  function fillDemo(email: string, password: string) {
+    setValue('email', email)
+    setValue('password', password)
   }
 
   async function onSubmit(data: LoginFormData) {
@@ -67,7 +67,12 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/dashboard')
+    const session = await getSession()
+    if ((session?.user as { role?: string })?.role === 'system_admin') {
+      router.push('/admin')
+    } else {
+      router.push('/dashboard')
+    }
   }
 
   const q = TESTIMONIALS[quoteIdx]
@@ -163,18 +168,45 @@ export default function LoginPage() {
             <p style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-muted)' }}>Sign in to your business account</p>
           </div>
 
-          {/* Demo pre-fill */}
-          <button
-            type="button"
-            onClick={fillDemo}
-            style={{ width: '100%', border: '1px solid #7a2a0c', background: 'rgba(196,75,27,0.06)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', marginBottom: 20 }}
-          >
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 3 }}>Hackathon demo</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--nx-fg-strong)' }}>admin@meridian.io · demo1234</div>
+          {/* Demo accounts */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 8 }}>
+              Demo accounts — click to fill
             </div>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', color: '#c44b1b', whiteSpace: 'nowrap', marginLeft: 12 }}>Try demo account →</span>
-          </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {/* Business Admin */}
+              <button
+                type="button"
+                onClick={() => fillDemo('admin@meridian.io', 'demo1234')}
+                style={{ width: '100%', border: '1px solid var(--nx-border)', background: 'var(--nx-raised)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', textAlign: 'left' }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#5a9a7a', border: '1px solid rgba(90,154,122,0.4)', padding: '2px 6px' }}>Business Admin</span>
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--nx-fg-strong)' }}>admin@meridian.io</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--nx-muted)', marginTop: 2 }}>Meridian Logistics Group · password: demo1234</div>
+                </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--nx-muted)', flexShrink: 0, marginLeft: 12 }}>→</span>
+              </button>
+
+              {/* System Admin */}
+              <button
+                type="button"
+                onClick={() => fillDemo('admin@nexusb2b.io', 'admin1234')}
+                style={{ width: '100%', border: '1px solid rgba(196,75,27,0.3)', background: 'rgba(196,75,27,0.04)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', textAlign: 'left' }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c44b1b', border: '1px solid rgba(196,75,27,0.4)', padding: '2px 6px' }}>System Admin</span>
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--nx-fg-strong)' }}>admin@nexusb2b.io</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--nx-muted)', marginTop: 2 }}>Platform operations · password: admin1234</div>
+                </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#c44b1b', flexShrink: 0, marginLeft: 12 }}>→</span>
+              </button>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {serverError && (

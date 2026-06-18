@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { NavDropdown, NAV_MENUS } from '@/components/marketing/NavDropdowns'
 
 function NxLogo() {
   return (
@@ -51,11 +52,12 @@ export default function LandingPage() {
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
 
         {/* Nav */}
-        <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 80, borderBottom: '1px solid var(--nx-border)', flexWrap: 'wrap', gap: 16 }}>
+        <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 60, borderBottom: '1px solid var(--nx-border)', gap: 16 }}>
           <NxLogo />
           <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
-            <Link href="/platform/discovery" style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', textDecoration: 'none' }}>Platform</Link>
-            <Link href="/platform/verification" style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--nx-muted)', textDecoration: 'none' }}>Verification</Link>
+            {NAV_MENUS.map((m) => (
+              <NavDropdown key={m.label} label={m.label} items={m.items} />
+            ))}
             <button
               onClick={toggleTheme}
               title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}

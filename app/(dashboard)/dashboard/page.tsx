@@ -3,6 +3,7 @@ import { query, queryOne } from '@/lib/db/aurora'
 import Link from 'next/link'
 import { formatDateTime } from '@/lib/utils'
 import { DiscoverySearch } from '@/components/dashboard/DiscoverySearch'
+import { RemindersWidget } from '@/components/dashboard/RemindersWidget'
 
 export const metadata = { title: 'Dashboard' }
 
@@ -195,6 +196,9 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Reminders */}
+      <RemindersWidget />
     </div>
   )
 }

@@ -21,6 +21,7 @@ declare module 'next-auth' {
       name: string
       role: string
       businessId: string
+      emailVerified: boolean
     }
   }
 }
@@ -29,5 +30,7 @@ declare module '@auth/core/jwt' {
   interface JWT {
     role?: string
     businessId?: string
+    emailVerified?: boolean
+    hydrated?: boolean
   }
 }

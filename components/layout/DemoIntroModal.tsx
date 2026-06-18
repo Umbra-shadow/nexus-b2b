@@ -43,16 +43,16 @@ export function DemoIntroModal() {
             YOU&apos;RE IN A<br />DEMONSTRATION.
           </h2>
           <p style={{ fontFamily: 'var(--font-serif)', fontSize: 17, lineHeight: 1.65, color: 'var(--nx-muted)', maxWidth: 500 }}>
-            Everything you see here is fictional and built for a hackathon submission. No real money, real businesses, or real transactions are involved.
+            The platform and all its infrastructure is <strong style={{ color: 'var(--nx-fg)' }}>fully live</strong>. The businesses, users, and transactions are fictional — seeded for this hackathon submission.
           </p>
         </div>
 
         {/* Content */}
         <div style={{ padding: '28px 40px', display: 'flex', flexDirection: 'column', gap: 24 }}>
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--nx-subtle)', marginBottom: 10 }}>What you are seeing</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--nx-subtle)', marginBottom: 10 }}>The system is real — the data is not</div>
             <p style={{ fontFamily: 'var(--font-serif)', fontSize: 16, lineHeight: 1.65, color: 'var(--nx-fg)' }}>
-              All businesses in the discovery feed are <strong style={{ color: 'var(--nx-fg-strong)' }}>seeded with fictional data</strong>. When you open a session with one, an AI answers on their behalf — simulating how the platform would feel with real companies using it.
+              The infrastructure is fully operational: <strong style={{ color: 'var(--nx-fg-strong)' }}>AWS Aurora PostgreSQL, DynamoDB, S3, and SES</strong> are all live and connected. The businesses, users, and transactions you see are <strong style={{ color: 'var(--nx-fg-strong)' }}>seeded with fictional data</strong> — they are not real entities.
             </p>
           </div>
 
@@ -63,16 +63,45 @@ export function DemoIntroModal() {
             </p>
           </div>
 
-          <div style={{ border: '1px solid var(--nx-border)', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 4 }}>Demo credentials</div>
-            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 4 }}>Email</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--nx-fg-strong)' }}>admin@meridian.io</div>
+          {/* Gemini key notice */}
+          <div style={{ background: 'rgba(196,75,27,0.06)', border: '1px solid rgba(196,75,27,0.25)', padding: '14px 18px' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 6 }}>⚠ Gemini API key required for AI features</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, color: 'var(--nx-fg)', lineHeight: 1.6 }}>
+              AI-powered deal sessions require a <strong style={{ color: 'var(--nx-fg-strong)' }}>Google Gemini API key</strong>. Enter yours in the top bar after logging in. Without it, AI replies will not work.
+            </div>
+          </div>
+
+          {/* Credentials */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#c44b1b' }}>Demo credentials</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {/* Business admin */}
+              <div style={{ border: '1px solid var(--nx-border)', padding: '14px 18px' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 10 }}>Business Admin</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--nx-subtle)', marginBottom: 2 }}>EMAIL</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-fg-strong)' }}>admin@meridian.io</div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--nx-subtle)', marginBottom: 2 }}>PASSWORD</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-fg-strong)' }}>demo1234</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 4 }}>Password</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--nx-fg-strong)' }}>demo1234</div>
+              {/* System admin */}
+              <div style={{ border: '1px solid rgba(196,75,27,0.3)', padding: '14px 18px', background: 'rgba(196,75,27,0.03)' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 10 }}>System Admin</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--nx-subtle)', marginBottom: 2 }}>EMAIL</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-fg-strong)' }}>admin@nexusb2b.io</div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--nx-subtle)', marginBottom: 2 }}>PASSWORD</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--nx-fg-strong)' }}>admin1234</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
