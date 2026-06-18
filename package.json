@@ -37,7 +37,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.462.0",
     "nanoid": "^5.0.8",
-    "next": "15.0.4",
+    "next": "15.5.19",
     "next-auth": "^5.0.0-beta.25",
     "openai": "^4.104.0",
     "pdfmake": "^0.3.11",
