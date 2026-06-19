@@ -183,6 +183,40 @@ export async function sendNewBusinessNotification(params: {
   )
 }
 
+export async function sendChangeRequestNotification(params: {
+  type: 'update_info' | 'delete_business'
+  requestId: string
+  businessName: string
+  requesterName: string
+  requesterEmail: string
+}): Promise<void> {
+  const adminEmail = process.env.PLATFORM_ADMIN_EMAIL
+  if (!adminEmail) return
+
+  const reviewLink = `${getAppUrl()}/admin/requests`
+  const typeLabel = params.type === 'delete_business' ? 'Business Deletion Request' : 'Profile Update Request'
+  const typeColor = params.type === 'delete_business' ? '#8b1c1c' : '#c44b1b'
+
+  await sendEmail(
+    adminEmail,
+    `[NexusB2B] ${typeLabel} — ${params.businessName}`,
+    `<div style="font-family:Inter,sans-serif;max-width:560px;margin:0 auto;padding:32px">
+      <p style="color:#999;font-size:12px;margin-bottom:24px;font-family:monospace;letter-spacing:0.1em;text-transform:uppercase">NexusB2B — Platform Admin</p>
+      <h2 style="color:${typeColor};margin-bottom:4px;font-size:22px">${typeLabel}</h2>
+      <p style="color:#555">A verified business has submitted a request that requires your review.</p>
+      <table style="border-collapse:collapse;width:100%;margin:20px 0">
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#999;font-size:13px;font-family:monospace;width:140px">Business</td><td style="padding:8px 0;border-bottom:1px solid #eee;color:#111;font-size:13px;font-weight:600">${params.businessName}</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#999;font-size:13px;font-family:monospace">Submitted by</td><td style="padding:8px 0;border-bottom:1px solid #eee;color:#111;font-size:13px">${params.requesterName} &lt;${params.requesterEmail}&gt;</td></tr>
+        <tr><td style="padding:8px 0;color:#999;font-size:13px;font-family:monospace">Request type</td><td style="padding:8px 0;color:${typeColor};font-size:13px;font-family:monospace;text-transform:uppercase;letter-spacing:0.08em">${params.type.replace('_', ' ')}</td></tr>
+      </table>
+      <a href="${reviewLink}" style="display:inline-block;background:${typeColor};color:#fff;padding:14px 28px;text-decoration:none;font-family:monospace;font-size:13px;margin:8px 0">
+        Review Request →
+      </a>
+      <p style="color:#999;font-size:12px;margin-top:24px">Go to Admin → Requests to approve or reject this submission.</p>
+    </div>`
+  )
+}
+
 export async function sendInfoRequest(to: string, adminName: string, businessName: string, message: string): Promise<void> {
   await sendEmail(
     to,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth/session'
 import { query, queryOne } from '@/lib/db/aurora'
+import { sendChangeRequestNotification } from '@/lib/email/ses'
 
 // GET — list own business's change requests
 export async function GET(_req: NextRequest) {
@@ -65,6 +66,24 @@ export async function POST(req: NextRequest) {
      RETURNING id`,
     [session.user.businessId, type, session.user.id, JSON.stringify(payload ?? {})]
   )
+
+  // Notify platform admin — non-fatal
+  queryOne<{ name: string; email: string; business_name: string }>(
+    `SELECT u.name, u.email, b.name as business_name
+     FROM users u
+     JOIN businesses b ON b.id = $2
+     WHERE u.id = $1`,
+    [session.user.id, session.user.businessId]
+  ).then((info) => {
+    if (!info) return
+    return sendChangeRequestNotification({
+      type: type as 'update_info' | 'delete_business',
+      requestId: row?.id ?? '',
+      businessName: info.business_name,
+      requesterName: info.name,
+      requesterEmail: info.email,
+    })
+  }).catch((err) => console.error('[requests] admin notification failed:', err))
 
   return NextResponse.json({ id: row?.id }, { status: 201 })
 }
