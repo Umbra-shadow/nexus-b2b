@@ -1,6 +1,5 @@
-import { NextResponse } from 'next/server'
-import { auth } from '@/auth'
-import type { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { getToken } from 'next-auth/jwt'
 
 const PUBLIC_PATHS = [
   '/',
@@ -49,8 +48,9 @@ function rateLimit(ip: string, path: string, method: string): boolean {
   return false
 }
 
-export default auth((req) => {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
+
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 
   if (rateLimit(ip, pathname, req.method)) {
@@ -63,8 +63,10 @@ export default auth((req) => {
 
   if (isPublic) return NextResponse.next()
 
-  // req.auth is populated by NextAuth v5 — null means no valid session
-  if (!req.auth) {
+  // getToken reads the JWT cookie without touching the database — safe for edge runtime.
+  // NextAuth v5 with NEXTAUTH_SECRET set uses the v4 cookie name (next-auth.session-token).
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+  if (!token) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -75,7 +77,7 @@ export default auth((req) => {
   }
 
   return NextResponse.next()
-})
+}
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|public/).*)'],
