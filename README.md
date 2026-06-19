@@ -76,13 +76,15 @@ Browser (Next.js 15 App Router)
          ├── Amazon S3                            — logos + verification documents
          └── Resend                               — transactional email (all flows)
               │
-              └── Lummy (Claude claude-sonnet-4-6 / Gemini)
-                       — session introductions, AI search parsing, deal assistance
+              └── Lummy (Google Gemini 2.5 Flash)
+                       — search parsing, session introductions, deal chat, admin assistant
 ```
 
 **Auth:** NextAuth.js v5 (JWT strategy). On HTTPS, cookies use the `__Secure-authjs.session-token` prefix — middleware reads these with `secureCookie: true` to match correctly in production.
 
-**Search:** Natural-language queries go through a Gemini AI parser that extracts industry, country, and capability keywords. A local rule-based parser provides a fallback. Keyword matching uses PostgreSQL `~*` regex with `\y` word boundaries to prevent substring false positives (e.g. "ai" matching "retail").
+**AI:** All AI features run on **Google Gemini 2.5 Flash** via the OpenAI-compatible endpoint. The Gemini key is supplied by the user through the admin top bar and sent per-request via `x-gemini-key` header — no key is required at the server level (a server-side fallback key is optional via `GEMINI_API_KEY`).
+
+**Search:** Natural-language queries go through Gemini which extracts industry, country, and capability keywords. A local rule-based parser provides a zero-latency fallback. Keyword matching uses PostgreSQL `~*` regex with `\y` word boundaries to prevent substring false positives (e.g. "ai" matching "retail").
 
 **Banking details** are encrypted at rest using AES-256-GCM with a key stored separately from the data.
 
@@ -97,8 +99,7 @@ Browser (Next.js 15 App Router)
 | Database (relational) | Amazon Aurora PostgreSQL Serverless v2 |
 | Database (messages) | Amazon DynamoDB |
 | Auth | NextAuth.js v5 beta |
-| AI — search parsing | Google Gemini (user-supplied key or server fallback) |
-| AI — deal sessions | Anthropic Claude claude-sonnet-4-6 |
+| AI — all features | Google Gemini 2.5 Flash (search parsing, Lummy introductions, deal sessions, admin assistant) |
 | File storage | Amazon S3 |
 | Email | Resend |
 | Hosting | Vercel |
@@ -158,7 +159,7 @@ npm run dev
 | `RESEND_API` | ✓ | Resend API key for transactional email |
 | `RESEND_FROM` | ✓ | Verified sender e.g. `NexusB2B <hello@nexusb2b.io>` |
 | `ENCRYPTION_KEY` | ✓ | 32-byte hex key for AES-256-GCM (banking details) |
-| `GEMINI_API_KEY` | optional | Server-side Gemini key. Users can also supply their own in the UI. |
+| `GEMINI_API_KEY` | optional | Server-side fallback Gemini key. Users can also supply their own via the key input in the top bar. |
 
 > **Security:** Never commit `.env` to version control. The `.gitignore` excludes it. All secrets live only in Vercel environment variables in production.
 
