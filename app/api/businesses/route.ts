@@ -176,9 +176,10 @@ export async function GET(req: NextRequest) {
       for (const word of words) {
         const wIdx = idx++
         prms.push(word)
-        wordClauses.push(`b.name ILIKE '%' || $${wIdx} || '%'`)
-        wordClauses.push(`b.description ILIKE '%' || $${wIdx} || '%'`)
-        wordClauses.push(`b.industry::text ILIKE '%' || $${wIdx} || '%'`)
+        // \y is PostgreSQL word-boundary in ARE regex — prevents "ai" matching "retail", "email", etc.
+        wordClauses.push(`b.name ~* ('\\y' || $${wIdx} || '\\y')`)
+        wordClauses.push(`b.description ~* ('\\y' || $${wIdx} || '\\y')`)
+        wordClauses.push(`b.industry::text ~* ('\\y' || $${wIdx} || '\\y')`)
       }
       if (wordClauses.length > 0) {
         conds.push(`(${wordClauses.join(' OR ')})`)
