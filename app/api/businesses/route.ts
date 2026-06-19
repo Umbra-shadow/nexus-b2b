@@ -156,7 +156,7 @@ export async function GET(req: NextRequest) {
         prms.push(word)
         wordClauses.push(`b.name ILIKE '%' || $${wIdx} || '%'`)
         wordClauses.push(`b.description ILIKE '%' || $${wIdx} || '%'`)
-        wordClauses.push(`b.industry ILIKE '%' || $${wIdx} || '%'`)
+        wordClauses.push(`b.industry::text ILIKE '%' || $${wIdx} || '%'`)
       }
       if (wordClauses.length > 0) {
         conds.push(`(${wordClauses.join(' OR ')})`)
