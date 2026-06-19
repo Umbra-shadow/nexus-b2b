@@ -6,6 +6,7 @@ import { Suspense } from 'react'
 const TABS = [
   { label: 'Account',        href: '/settings/account?tab=account' },
   { label: 'Business',       href: '/settings/account?tab=business' },
+  { label: 'Billing',        href: '/settings/billing' },
   { label: 'Data & Exports', href: '/settings/data' },
   { label: 'Privacy Policy', href: '/settings/policies' },
   { label: 'Contact Us',     href: '/settings/contact' },

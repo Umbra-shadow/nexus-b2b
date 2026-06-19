@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: '/admin/users', label: '◎ Users', exact: false },
   { href: '/admin/sessions', label: '⬢ Sessions', exact: false },
   { href: '/admin/receipts', label: '◻ Receipts', exact: false },
+  { href: '/admin/subscriptions', label: '◑ Subscriptions', exact: false },
   { href: '/admin/settings', label: '⚙ Settings', exact: false },
 ]
 

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Upload, X } from 'lucide-react'
+import { Upload, X, Lock } from 'lucide-react'
 import { RegisterBusinessSchema, RegisterUserSchema, INDUSTRIES } from '@/lib/validators'
 import { COUNTRIES } from '@/lib/constants/countries'
 import type { z } from 'zod'
@@ -13,7 +13,66 @@ import type { z } from 'zod'
 type BusinessData = z.infer<typeof RegisterBusinessSchema>
 type UserData = z.infer<typeof RegisterUserSchema>
 
-const STEPS = ['Business Details', 'Your Account']
+const STEPS = ['Business Details', 'Choose a Plan', 'Your Account']
+
+const PLANS = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    price: 'Free',
+    priceDetail: 'Always free',
+    highlight: false,
+    free: true,
+    features: [
+      '5 discovery searches / month',
+      '2 active deal sessions',
+      'Basic AI introductions',
+      'Email support',
+    ],
+    missing: [
+      'Analytics dashboard',
+      'Priority matching',
+      'API access',
+      'Dedicated manager',
+    ],
+  },
+  {
+    id: 'growth',
+    name: 'Growth',
+    price: '$49',
+    priceDetail: 'per month',
+    highlight: true,
+    free: false,
+    features: [
+      'Unlimited discovery searches',
+      '20 active deal sessions',
+      'Priority AI introductions',
+      'Analytics dashboard',
+      'Priority email support',
+    ],
+    missing: [
+      'API access',
+      'Dedicated account manager',
+    ],
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    price: '$199',
+    priceDetail: 'per month',
+    highlight: false,
+    free: false,
+    features: [
+      'Everything in Growth',
+      'Unlimited deal sessions',
+      'API access',
+      'Dedicated account manager',
+      'Custom branding',
+      'SLA guarantee',
+    ],
+    missing: [],
+  },
+]
 
 function NxLogo({ light }: { light?: boolean }) {
   const fg = light ? '#ffffff' : 'var(--nx-fg-strong)'
@@ -188,7 +247,7 @@ export default function RegisterPage() {
 
       {/* ─── Right form panel ─── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', overflowY: 'auto' }}>
-        <div style={{ width: '100%', maxWidth: 540 }}>
+        <div style={{ width: '100%', maxWidth: step === 1 ? 720 : 540 }}>
 
           {/* Mobile logo */}
           <div className="mobile-logo" style={{ marginBottom: 36 }}>
@@ -230,7 +289,7 @@ export default function RegisterPage() {
           {step === 0 && (
             <form onSubmit={bizForm.handleSubmit(onBizSubmit)} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 8 }}>/ Step 1 of 2</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 8 }}>/ Step 1 of 3</div>
                 <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 38, lineHeight: 0.9, color: 'var(--nx-fg-strong)', marginBottom: 8 }}>REGISTER YOUR BUSINESS</h1>
                 <p style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-muted)', lineHeight: 1.6 }}>Tell us about your company. All registrations are verified before appearing in search.</p>
               </div>
@@ -341,11 +400,150 @@ export default function RegisterPage() {
             </form>
           )}
 
-          {/* ── Step 2: User account ── */}
+          {/* ── Step 2: Choose a Plan ── */}
           {step === 1 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 8 }}>/ Step 2 of 3</div>
+                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 38, lineHeight: 0.9, color: 'var(--nx-fg-strong)', marginBottom: 8 }}>CHOOSE A PLAN</h1>
+                <p style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-muted)', lineHeight: 1.6 }}>
+                  Select the plan that fits your team. You can upgrade at any time from your settings.
+                </p>
+              </div>
+
+              {/* Demo notice banner */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px 16px',
+                border: '1px solid rgba(196,75,27,0.4)',
+                background: 'rgba(196,75,27,0.06)',
+              }}>
+                <Lock size={13} style={{ color: '#c44b1b', flexShrink: 0 }} />
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', color: '#c44b1b' }}>
+                  For demo purposes, all plans are currently free. Your account will be set to Starter.
+                </span>
+              </div>
+
+              {/* Plan cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                {PLANS.map((plan) => {
+                  const isSelected = plan.free
+                  const isLocked = !plan.free
+                  return (
+                    <div
+                      key={plan.id}
+                      style={{
+                        border: `1px solid ${isSelected ? '#c44b1b' : 'var(--nx-border)'}`,
+                        background: isSelected ? 'rgba(196,75,27,0.04)' : isLocked ? 'var(--nx-raised)' : 'transparent',
+                        padding: '24px 20px',
+                        position: 'relative',
+                        opacity: isLocked ? 0.55 : 1,
+                        cursor: 'default',
+                      }}
+                    >
+                      {/* Lock badge on paid plans */}
+                      {isLocked && (
+                        <div style={{
+                          position: 'absolute',
+                          top: 12,
+                          right: 12,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          padding: '3px 8px',
+                          background: 'var(--nx-bg)',
+                          border: '1px solid var(--nx-border)',
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 8,
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                          color: 'var(--nx-muted)',
+                        }}>
+                          <Lock size={8} />
+                          Demo
+                        </div>
+                      )}
+
+                      {/* Selected badge */}
+                      {isSelected && (
+                        <div style={{
+                          position: 'absolute',
+                          top: 12,
+                          right: 12,
+                          padding: '3px 8px',
+                          background: '#c44b1b',
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 8,
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                          color: '#fff',
+                        }}>
+                          ✓ Selected
+                        </div>
+                      )}
+
+                      {/* Plan name */}
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: isSelected ? '#c44b1b' : 'var(--nx-muted)', marginBottom: 6 }}>
+                        {plan.name}
+                      </div>
+
+                      {/* Price */}
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, lineHeight: 1, color: 'var(--nx-fg-strong)', marginBottom: 2 }}>
+                        {plan.price}
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--nx-muted)', marginBottom: 20 }}>
+                        {plan.priceDetail}
+                      </div>
+
+                      {/* Divider */}
+                      <div style={{ height: 1, background: 'var(--nx-border)', marginBottom: 16 }} />
+
+                      {/* Features */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {plan.features.map((f) => (
+                          <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#5a9a7a', flexShrink: 0, marginTop: 1 }}>✓</span>
+                            <span style={{ fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--nx-fg)', lineHeight: 1.4 }}>{f}</span>
+                          </div>
+                        ))}
+                        {plan.missing.map((f) => (
+                          <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--nx-faint)', flexShrink: 0, marginTop: 1 }}>—</span>
+                            <span style={{ fontFamily: 'var(--font-serif)', fontSize: 13, color: 'var(--nx-muted)', lineHeight: 1.4 }}>{f}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => setStep(0)}
+                  style={{ border: '1px solid var(--nx-border)', background: 'none', color: 'var(--nx-fg)', padding: '12px 20px', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: 'pointer' }}
+                >
+                  ← Back
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  style={{ flex: 1, background: '#c44b1b', color: '#ffffff', border: 'none', padding: '12px 24px', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', cursor: 'pointer' }}
+                >
+                  Continue with Starter →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Step 3: User account ── */}
+          {step === 2 && (
             <form onSubmit={userForm.handleSubmit(onUserSubmit)} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 8 }}>/ Step 2 of 2</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 8 }}>/ Step 3 of 3</div>
                 <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 38, lineHeight: 0.9, color: 'var(--nx-fg-strong)', marginBottom: 8 }}>CREATE YOUR ACCOUNT</h1>
                 <p style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: 'var(--nx-muted)', lineHeight: 1.6 }}>
                   You&apos;ll be the Business Admin for <strong style={{ color: 'var(--nx-fg-strong)' }}>{businessData?.businessName}</strong>.
@@ -379,7 +577,7 @@ export default function RegisterPage() {
               </div>
 
               <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
-                <button type="button" onClick={() => setStep(0)} style={{ border: '1px solid var(--nx-border)', background: 'none', color: 'var(--nx-fg)', padding: '12px 20px', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                <button type="button" onClick={() => setStep(1)} style={{ border: '1px solid var(--nx-border)', background: 'none', color: 'var(--nx-fg)', padding: '12px 20px', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: 'pointer' }}>
                   ← Back
                 </button>
                 <button type="submit" disabled={submitting} style={{ flex: 1, background: '#c44b1b', color: '#ffffff', border: 'none', padding: '12px 24px', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
