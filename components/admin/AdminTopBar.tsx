@@ -70,35 +70,51 @@ function GeminiKeyInput() {
 }
 
 function SignOutButton() {
-  const [confirm, setConfirm] = useState(false)
-
-  if (confirm) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, borderLeft: '1px solid var(--nx-border)', paddingLeft: 14 }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--nx-muted)', whiteSpace: 'nowrap' }}>Sign out?</span>
-        <button
-          onClick={() => signOut({ callbackUrl: '/auth/login' })}
-          style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '5px 10px', border: '1px solid rgba(196,75,27,0.5)', color: '#c44b1b', background: 'rgba(196,75,27,0.06)', cursor: 'pointer', whiteSpace: 'nowrap' }}
-        >
-          ✓ Yes
-        </button>
-        <button
-          onClick={() => setConfirm(false)}
-          style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '5px 10px', border: '1px solid var(--nx-border)', color: 'var(--nx-muted)', background: 'none', cursor: 'pointer' }}
-        >
-          Cancel
-        </button>
-      </div>
-    )
-  }
+  const [showConfirm, setShowConfirm] = useState(false)
 
   return (
-    <button
-      onClick={() => setConfirm(true)}
-      style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.14em', textTransform: 'uppercase', padding: '5px 10px', border: '1px solid var(--nx-border)', color: 'var(--nx-muted)', background: 'none', cursor: 'pointer', whiteSpace: 'nowrap', borderLeft: '1px solid var(--nx-border)', marginLeft: 14 }}
-    >
-      ⏻ Sign out
-    </button>
+    <>
+      <button
+        onClick={() => setShowConfirm(true)}
+        style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', padding: '7px 14px', border: '1px solid var(--nx-border)', color: 'var(--nx-muted)', background: 'none', cursor: 'pointer', whiteSpace: 'nowrap', marginLeft: 6, display: 'flex', alignItems: 'center', gap: 6 }}
+        onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#c44b1b'; e.currentTarget.style.color = '#c44b1b' }}
+        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--nx-border)'; e.currentTarget.style.color = 'var(--nx-muted)' }}
+      >
+        <span>⏻</span> Sign Out
+      </button>
+
+      {showConfirm && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.6)' }}
+          onClick={() => setShowConfirm(false)}
+        >
+          <div
+            style={{ background: 'var(--nx-bg)', border: '1px solid var(--nx-border)', padding: '32px 28px', maxWidth: 360, width: '90%' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 12 }}>/ Confirm</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--nx-fg-strong)', marginBottom: 10, textTransform: 'uppercase' }}>Sign Out?</div>
+            <p style={{ fontFamily: 'var(--font-serif)', fontSize: 14, lineHeight: 1.6, color: 'var(--nx-muted)', marginBottom: 24 }}>
+              You will be signed out of your account and returned to the login page.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => signOut({ callbackUrl: '/auth/login' })}
+                style={{ flex: 1, padding: '11px 16px', background: '#c44b1b', border: 'none', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', cursor: 'pointer' }}
+              >
+                Yes, Sign Out
+              </button>
+              <button
+                onClick={() => setShowConfirm(false)}
+                style={{ flex: 1, padding: '11px 16px', background: 'none', border: '1px solid var(--nx-border)', color: 'var(--nx-muted)', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
