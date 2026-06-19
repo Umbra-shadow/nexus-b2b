@@ -14,14 +14,14 @@ const L: React.CSSProperties = {
   textTransform: 'uppercase',
   color: 'var(--nx-muted)',
   display: 'block',
-  marginBottom: 10,
+  marginBottom: 6,
 }
 
 const I: React.CSSProperties = {
   width: '100%',
   background: 'var(--nx-raised)',
   border: '1px solid var(--nx-border)',
-  padding: '14px 16px',
+  padding: '9px 12px',
   fontFamily: 'var(--font-serif)',
   fontSize: 15,
   color: 'var(--nx-fg-strong)',
@@ -57,7 +57,7 @@ const SH: React.CSSProperties = {
   letterSpacing: '0.2em',
   textTransform: 'uppercase',
   color: 'var(--nx-fg)',
-  marginBottom: 20,
+  marginBottom: 10,
 }
 
 function SaveBtn({ saving, label }: { saving: boolean; label: string }) {
@@ -69,7 +69,7 @@ function SaveBtn({ saving, label }: { saving: boolean; label: string }) {
         display: 'inline-block',
         background: saving ? 'var(--nx-muted)' : '#c44b1b',
         color: '#ffffff',
-        padding: '14px 28px',
+        padding: '10px 24px',
         fontFamily: 'var(--font-mono)',
         fontSize: 11,
         letterSpacing: '0.16em',
@@ -159,7 +159,7 @@ function AccountTab() {
       {msg && <Msg ok={msg.ok} text={msg.text} />}
 
       <div style={SH}>Profile</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 40 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
         <div>
           <label style={L}>Display name</label>
           <input value={name} onChange={(e) => setName(e.target.value)} style={I} required />
@@ -171,7 +171,7 @@ function AccountTab() {
       </div>
 
       <div style={SH}>Contact info</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 40 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
         <div>
           <label style={L}>Phone</label>
           <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 555 000 0000" style={IM} />
@@ -187,7 +187,7 @@ function AccountTab() {
       </div>
 
       <div style={SH}>Change password</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
         <div>
           <label style={L}>New password</label>
           <input type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="••••••••" style={IM} />
@@ -313,7 +313,7 @@ function BusinessTab() {
     <>
       {/* ── Pending request banner ── */}
       {pendingRequest && (
-        <div style={{ border: '1px solid rgba(196,75,27,0.4)', background: 'rgba(196,75,27,0.06)', padding: '12px 16px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ border: '1px solid rgba(196,75,27,0.4)', background: 'rgba(196,75,27,0.06)', padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
           <AlertTriangle size={14} style={{ color: '#c44b1b', flexShrink: 0 }} />
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.08em', color: '#c44b1b' }}>
             You have a pending update request submitted on {new Date(pendingRequest.requested_at).toLocaleDateString()}. It is under review by the platform team.
@@ -323,7 +323,7 @@ function BusinessTab() {
 
       {/* ── Read-only current profile ── */}
       <div style={SH}>Company profile <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--nx-muted)', letterSpacing: '0.08em', textTransform: 'none', marginLeft: 8 }}>— read only</span></div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
         <div>
           <label style={L}>Company name</label>
           <input value={biz.name ?? ''} readOnly style={IRO} />
@@ -341,24 +341,24 @@ function BusinessTab() {
           <input value={biz.industry ?? ''} readOnly style={IRO} />
         </div>
       </div>
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 16 }}>
         <label style={L}>Description</label>
         <textarea
           value={biz.description ?? ''}
           readOnly
-          style={{ ...IRO, minHeight: 84, resize: 'none' }}
+          style={{ ...IRO, minHeight: 68, resize: 'none' }}
         />
       </div>
 
       {isAdmin && (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <span style={SH}>Payment details</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#5a9a7a', border: '1px solid #274a3a', padding: '2px 6px', marginBottom: 20 }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#5a9a7a', border: '1px solid #274a3a', padding: '2px 6px', marginBottom: 10 }}>
               🔒 Encrypted at rest
             </span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
             <div>
               <label style={L}>Account holder</label>
               <input value={biz.bank_account_name ?? ''} readOnly style={IR} />
@@ -408,7 +408,7 @@ function BusinessTab() {
 
       {/* ── Recent requests history ── */}
       {requests.length > 0 && (
-        <div style={{ marginTop: 36, borderTop: '1px solid var(--nx-border)', paddingTop: 24 }}>
+        <div style={{ marginTop: 20, borderTop: '1px solid var(--nx-border)', paddingTop: 16 }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--nx-muted)', marginBottom: 14 }}>Update Request History</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {requests.map((r) => (
@@ -696,8 +696,8 @@ export default function SettingsPage() {
       {tab === 'account' && (
         <>
           <AccountTab />
-          <div style={{ borderTop: '1px solid var(--nx-border)', marginTop: 48, paddingTop: 32 }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--nx-fg)', marginBottom: 20 }}>Danger zone</div>
+          <div style={{ borderTop: '1px solid var(--nx-border)', marginTop: 28, paddingTop: 20 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--nx-fg)', marginBottom: 12 }}>Danger zone</div>
             <DangerZone />
           </div>
         </>
