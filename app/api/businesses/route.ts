@@ -89,6 +89,7 @@ function parseQueryLocally(text: string): { industry: string | null; country: st
 }
 
 export async function GET(req: NextRequest) {
+  try {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -128,12 +129,15 @@ export async function GET(req: NextRequest) {
 
   // ── Build WHERE ──────────────────────────────────────────────────────────────
 
+  // Exclude own business; use a sentinel UUID if businessId is missing so the cast never throws.
+  const ownBusinessId = (session!.user as { businessId?: string }).businessId || '00000000-0000-0000-0000-000000000000'
+
   function buildConditions(withCountry: boolean, withIndustry: boolean, withKeywords: boolean) {
     const conds: string[] = [
       `b.verification_status = 'verified'`,
       `b.id != $1::uuid`,
     ]
-    const prms: unknown[] = [session!.user.businessId]
+    const prms: unknown[] = [ownBusinessId]
     let idx = 2
 
     if (withCountry && parsedCountry) {
@@ -183,34 +187,13 @@ export async function GET(req: NextRequest) {
 
   let fallbackNote: string | null = null
 
-  if (businesses.length === 0 && (parsedCountry || parsedIndustry)) {
-    // Step 1: relax country, keep industry + keywords
-    if (parsedCountry && parsedIndustry) {
-      const { where: w2, params: p2, nextIdx: n2 } = buildConditions(false, true, true)
-      businesses = await runQuery(w2, p2, n2)
-      if (businesses.length > 0) {
-        const countryName = Object.entries(COUNTRY_KEYWORDS)
-          .find(([code]) => code === parsedCountry)?.[1]?.[0] ?? parsedCountry
-        fallbackNote = `No ${parsedIndustry} companies found in ${countryName.charAt(0).toUpperCase() + countryName.slice(1)}. Showing verified partners from other regions:`
-      }
-    }
-
-    // Step 2: relax industry, keep keywords only
-    if (businesses.length === 0 && keywords) {
-      const { where: w2, params: p2, nextIdx: n2 } = buildConditions(false, false, true)
-      businesses = await runQuery(w2, p2, n2)
-      if (businesses.length > 0) {
-        fallbackNote = `Showing verified partners related to your search:`
-      }
-    }
-
-    // Step 3: relax everything — show all verified businesses
-    if (businesses.length === 0) {
-      const { where: w2, params: p2, nextIdx: n2 } = buildConditions(false, false, false)
-      businesses = await runQuery(w2, p2, n2)
-      if (businesses.length > 0) {
-        fallbackNote = `No exact matches found. Showing all verified partners on the platform:`
-      }
+  // If no results and we applied filters, fall back to showing all verified businesses
+  // in a single extra query rather than chaining multiple round-trips.
+  if (businesses.length === 0 && rawQ) {
+    const { where: w2, params: p2, nextIdx: n2 } = buildConditions(false, false, false)
+    businesses = await runQuery(w2, p2, n2)
+    if (businesses.length > 0) {
+      fallbackNote = `No exact matches found. Showing all verified partners on the platform:`
     }
   }
 
@@ -223,4 +206,8 @@ export async function GET(req: NextRequest) {
   )
 
   return NextResponse.json({ businesses: withUrls, page, pageSize: PAGE_SIZE, fallbackNote })
+  } catch (err) {
+    console.error('[api/businesses] error:', err)
+    return NextResponse.json({ businesses: [], page: 1, pageSize: PAGE_SIZE, fallbackNote: null }, { status: 200 })
+  }
 }
