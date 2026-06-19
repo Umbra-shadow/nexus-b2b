@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getToken } from 'next-auth/jwt'
+import { NextResponse } from 'next/server'
+import { auth } from '@/auth'
+import type { NextRequest } from 'next/server'
 
 const PUBLIC_PATHS = [
   '/',
@@ -19,6 +20,8 @@ const PUBLIC_PATHS = [
   '/privacy',
   '/terms',
   '/status',
+  '/help',
+  '/support',
 ]
 
 // Only rate-limit POST requests on auth mutation endpoints (not page navigations)
@@ -46,9 +49,8 @@ function rateLimit(ip: string, path: string, method: string): boolean {
   return false
 }
 
-export async function middleware(req: NextRequest) {
+export default auth((req) => {
   const { pathname } = req.nextUrl
-
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 
   if (rateLimit(ip, pathname, req.method)) {
@@ -61,10 +63,8 @@ export async function middleware(req: NextRequest) {
 
   if (isPublic) return NextResponse.next()
 
-  // Verify JWT without touching the database — safe for edge runtime
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET! })
-  if (!token) {
-    // API routes get 401; page routes get redirected to login
+  // req.auth is populated by NextAuth v5 — null means no valid session
+  if (!req.auth) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -75,7 +75,7 @@ export async function middleware(req: NextRequest) {
   }
 
   return NextResponse.next()
-}
+})
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|public/).*)'],
