@@ -120,7 +120,10 @@ function DiscoveryPageInner() {
           <span style={{ color: '#c44b1b', fontSize: 15, flexShrink: 0 }}>⌕</span>
           <input
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value)
+              if (e.target.value === '') fetchBusinesses('', industry)
+            }}
             placeholder="e.g. compostable packaging supplier in Spain"
             style={{
               flex: 1,
