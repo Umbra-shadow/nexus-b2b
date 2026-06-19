@@ -63,9 +63,10 @@ export async function middleware(req: NextRequest) {
 
   if (isPublic) return NextResponse.next()
 
-  // getToken reads the JWT cookie without touching the database — safe for edge runtime.
-  // NextAuth v5 with NEXTAUTH_SECRET set uses the v4 cookie name (next-auth.session-token).
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET })
+  // NextAuth v5 uses __Secure-authjs.session-token on HTTPS and authjs.session-token on HTTP.
+  // secureCookie must match what NextAuth set; default false would miss the __Secure- prefix in prod.
+  const secureCookie = req.nextUrl.protocol === 'https:'
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET, secureCookie })
   if (!token) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

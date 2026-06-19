@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { signIn, getSession } from 'next-auth/react'
+import { useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Eye, EyeOff } from 'lucide-react'
@@ -37,7 +37,6 @@ const TESTIMONIALS = [
 ]
 
 export default function LoginPage() {
-  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [quoteIdx] = useState(() => Math.floor(Date.now() / 60000) % TESTIMONIALS.length)
@@ -68,11 +67,8 @@ export default function LoginPage() {
     }
 
     const session = await getSession()
-    if ((session?.user as { role?: string })?.role === 'system_admin') {
-      router.push('/admin')
-    } else {
-      router.push('/dashboard')
-    }
+    const dest = (session?.user as { role?: string })?.role === 'system_admin' ? '/admin' : '/dashboard'
+    window.location.href = dest
   }
 
   const q = TESTIMONIALS[quoteIdx]
