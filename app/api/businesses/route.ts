@@ -145,18 +145,18 @@ export async function GET(req: NextRequest) {
       prms.push(parsedIndustry)
     }
     if (withKeywords && keywords) {
-      const ftsIdx = idx++
-      prms.push(keywords)
-      const words = keywords.split(/\s+/).filter((w) => w.length > 2)
+      const words = keywords.split(/\s+/).filter((w) => w.length > 1)
       const wordClauses: string[] = []
       for (const word of words) {
         const wIdx = idx++
         prms.push(word)
         wordClauses.push(`b.name ILIKE '%' || $${wIdx} || '%'`)
         wordClauses.push(`b.description ILIKE '%' || $${wIdx} || '%'`)
+        wordClauses.push(`b.industry ILIKE '%' || $${wIdx} || '%'`)
       }
-      const ilikeClause = wordClauses.length > 0 ? ` OR ${wordClauses.join(' OR ')}` : ''
-      conds.push(`(b.search_vector @@ websearch_to_tsquery('english', $${ftsIdx})${ilikeClause})`)
+      if (wordClauses.length > 0) {
+        conds.push(`(${wordClauses.join(' OR ')})`)
+      }
     }
     return { where: `WHERE ${conds.join(' AND ')}`, params: prms, nextIdx: idx }
   }
@@ -183,24 +183,34 @@ export async function GET(req: NextRequest) {
 
   let fallbackNote: string | null = null
 
-  // If no results AND a specific country was requested, relax the country filter
-  // but keep the industry — show same-sector companies from anywhere
-  if (businesses.length === 0 && parsedCountry && parsedIndustry) {
-    const { where: w2, params: p2, nextIdx: n2 } = buildConditions(false, true, false)
-    businesses = await runQuery(w2, p2, n2)
-    if (businesses.length > 0) {
-      const countryName = Object.entries(COUNTRY_KEYWORDS)
-        .find(([code]) => code === parsedCountry)?.[1]?.[0] ?? parsedCountry
-      fallbackNote = `No ${parsedIndustry} companies found in ${countryName.charAt(0).toUpperCase() + countryName.slice(1)}. Showing verified partners from other regions:`
+  if (businesses.length === 0 && (parsedCountry || parsedIndustry)) {
+    // Step 1: relax country, keep industry + keywords
+    if (parsedCountry && parsedIndustry) {
+      const { where: w2, params: p2, nextIdx: n2 } = buildConditions(false, true, true)
+      businesses = await runQuery(w2, p2, n2)
+      if (businesses.length > 0) {
+        const countryName = Object.entries(COUNTRY_KEYWORDS)
+          .find(([code]) => code === parsedCountry)?.[1]?.[0] ?? parsedCountry
+        fallbackNote = `No ${parsedIndustry} companies found in ${countryName.charAt(0).toUpperCase() + countryName.slice(1)}. Showing verified partners from other regions:`
+      }
     }
-  } else if (businesses.length === 0 && parsedCountry && !parsedIndustry) {
-    // Country specified but no industry and no results — try keywords only
-    const { where: w2, params: p2, nextIdx: n2 } = buildConditions(false, false, true)
-    businesses = await runQuery(w2, p2, n2)
-    if (businesses.length > 0) {
-      const countryName = Object.entries(COUNTRY_KEYWORDS)
-        .find(([code]) => code === parsedCountry)?.[1]?.[0] ?? parsedCountry
-      fallbackNote = `No results found in ${countryName.charAt(0).toUpperCase() + countryName.slice(1)}. Showing similar verified partners:`
+
+    // Step 2: relax industry, keep keywords only
+    if (businesses.length === 0 && keywords) {
+      const { where: w2, params: p2, nextIdx: n2 } = buildConditions(false, false, true)
+      businesses = await runQuery(w2, p2, n2)
+      if (businesses.length > 0) {
+        fallbackNote = `Showing verified partners related to your search:`
+      }
+    }
+
+    // Step 3: relax everything — show all verified businesses
+    if (businesses.length === 0) {
+      const { where: w2, params: p2, nextIdx: n2 } = buildConditions(false, false, false)
+      businesses = await runQuery(w2, p2, n2)
+      if (businesses.length > 0) {
+        fallbackNote = `No exact matches found. Showing all verified partners on the platform:`
+      }
     }
   }
 
