@@ -62,12 +62,31 @@ const STOP_WORDS = new Set([
   'also', 'just', 'only', 'even', 'both', 'each', 'other',
 ])
 
+// Words that explicitly name an industry as the subject of the search (not just capabilities).
+// "I want logistics companies" → industry filter. "AI logistics startup" → keyword only.
+const EXPLICIT_INDUSTRY_PHRASES = new Set([
+  'logistics company', 'logistics companies', 'logistics firm', 'logistics firms',
+  'manufacturing company', 'manufacturing companies', 'manufacturer', 'manufacturers',
+  'finance company', 'finance firms', 'financial company', 'financial companies',
+  'healthcare company', 'healthcare companies', 'health company',
+  'technology company', 'technology companies', 'tech company', 'tech companies',
+  'retail company', 'retail companies', 'retailer', 'retailers',
+  'energy company', 'energy companies',
+  'agriculture company', 'agriculture companies', 'agri company', 'farming company',
+  'legal firm', 'law firm', 'law firms', 'legal company',
+])
+
 function parseQueryLocally(text: string): { industry: string | null; country: string | null; keywords: string } {
   const lower = text.toLowerCase()
 
+  // Only set an industry filter when the query explicitly names a sector as the target,
+  // not when sector-adjacent capability words appear (e.g. "ai", "solar", "blockchain").
   let industry: string | null = null
-  for (const [ind, words] of Object.entries(INDUSTRY_KEYWORDS)) {
-    if (words.some((w) => lower.includes(w))) { industry = ind; break }
+  const hasExplicitIndustry = [...EXPLICIT_INDUSTRY_PHRASES].some((p) => lower.includes(p))
+  if (hasExplicitIndustry) {
+    for (const [ind, words] of Object.entries(INDUSTRY_KEYWORDS)) {
+      if (words.some((w) => lower.includes(w))) { industry = ind; break }
+    }
   }
 
   let country: string | null = null
@@ -75,14 +94,13 @@ function parseQueryLocally(text: string): { industry: string | null; country: st
     if (words.some((w) => lower.includes(w))) { country = code; break }
   }
 
-  // Keywords: remove stop words + industry/country words that are now handled as filters
-  const industryWords = new Set(industry ? INDUSTRY_KEYWORDS[industry] ?? [] : [])
+  // All meaningful words become keywords so they match names/descriptions across all industries.
   const countryWords = new Set(country ? COUNTRY_KEYWORDS[country] ?? [] : [])
 
   const keywords = text
     .split(/\s+/)
     .map((w) => w.toLowerCase().replace(/[^a-z]/g, ''))
-    .filter((w) => w.length > 2 && !STOP_WORDS.has(w) && !industryWords.has(w) && !countryWords.has(w))
+    .filter((w) => w.length > 1 && !STOP_WORDS.has(w) && !countryWords.has(w))
     .join(' ')
 
   return { industry, country, keywords }
@@ -105,7 +123,9 @@ export async function GET(req: NextRequest) {
   let keywords = ''
   let aiParsed = false
 
-  // Run AI parse on natural language queries; fall back to local rule-based parser
+  // Run AI parse on natural language queries; fall back to local rule-based parser.
+  // Industry filter is only applied when the query explicitly names a sector (e.g. "logistics companies").
+  // Capability terms like "ai", "solar", "blockchain" go into keywords so they match across industries.
   const geminiKey = req.headers.get('x-gemini-key') || undefined
   if (rawQ && rawQ.length > 2 && !countryParam && !industryParam) {
     try {
@@ -122,6 +142,8 @@ export async function GET(req: NextRequest) {
   if (!aiParsed && rawQ) {
     const local = parseQueryLocally(rawQ)
     parsedCountry = local.country
+    // Only apply industry filter if the user explicitly named the sector.
+    // Capability words ("ai", "solar") should remain as keywords to match across all industries.
     parsedIndustry = local.industry
     keywords = local.keywords
     aiParsed = true
@@ -187,13 +209,22 @@ export async function GET(req: NextRequest) {
 
   let fallbackNote: string | null = null
 
-  // If no results and we applied filters, fall back to showing all verified businesses
-  // in a single extra query rather than chaining multiple round-trips.
+  // If no results, relax keyword filter but keep industry (so "ai related business" stays in technology).
+  // Only fall back to show-all if no industry was detected or industry-only also returns nothing.
   if (businesses.length === 0 && rawQ) {
-    const { where: w2, params: p2, nextIdx: n2 } = buildConditions(false, false, false)
-    businesses = await runQuery(w2, p2, n2)
-    if (businesses.length > 0) {
-      fallbackNote = `No exact matches found. Showing all verified partners on the platform:`
+    if (parsedIndustry) {
+      const { where: w2, params: p2, nextIdx: n2 } = buildConditions(false, true, false)
+      businesses = await runQuery(w2, p2, n2)
+      if (businesses.length > 0) {
+        fallbackNote = `Showing verified ${parsedIndustry} partners:`
+      }
+    }
+    if (businesses.length === 0) {
+      const { where: w2, params: p2, nextIdx: n2 } = buildConditions(false, false, false)
+      businesses = await runQuery(w2, p2, n2)
+      if (businesses.length > 0) {
+        fallbackNote = `No exact matches found. Showing all verified partners:`
+      }
     }
   }
 
