@@ -240,7 +240,7 @@ export default async function ReceiptPrintPage({ params }: Props) {
             Issued via NexusB2B · Session {receipt.session_id.slice(0, 8).toUpperCase()}
           </div>
           <div className="label" style={{ color: '#aaa', textAlign: 'right' }}>
-            nexusb2b.io
+            nexus-b2b.vercel.app
           </div>
         </div>
 

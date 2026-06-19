@@ -153,7 +153,7 @@ export default async function ReceiptPrintPage({ params }: { params: Promise<{ i
             <div className="mono" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{receipt.status}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div className="mono" style={{ fontSize: 9, color: '#999', letterSpacing: '0.1em' }}>Issued via NexusB2B · nexusb2b.io</div>
+            <div className="mono" style={{ fontSize: 9, color: '#999', letterSpacing: '0.1em' }}>Issued via NexusB2B · nexus-b2b.vercel.app</div>
             <div className="mono" style={{ fontSize: 9, color: '#999', marginTop: 2 }}>Session: {receipt.session_id.slice(0, 8).toUpperCase()}</div>
           </div>
         </div>

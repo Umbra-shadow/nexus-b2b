@@ -252,7 +252,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
       {
         columns: [
           { text: `Issued via NexusB2B · Session ${receipt.session_id.slice(0, 8).toUpperCase()}`, font: 'Courier', fontSize: 7, color: '#aaa' },
-          { text: 'nexusb2b.io', font: 'Courier', fontSize: 7, color: '#aaa', alignment: 'right' },
+          { text: 'nexus-b2b.vercel.app', font: 'Courier', fontSize: 7, color: '#aaa', alignment: 'right' },
         ],
       },
     ],

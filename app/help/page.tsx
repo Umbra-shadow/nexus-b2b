@@ -170,7 +170,7 @@ export default function HelpPage() {
               </span>
             </Link>
             <a
-              href="https://status.nexusb2b.io"
+              href="/status"
               style={{
                 padding: '24px',
                 border: '1px solid var(--nx-border)',
