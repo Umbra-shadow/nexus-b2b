@@ -210,16 +210,38 @@ export async function GET(req: NextRequest) {
 
   let fallbackNote: string | null = null
 
-  // If no results, relax keyword filter but keep industry (so "ai related business" stays in technology).
-  // Only fall back to show-all if no industry was detected or industry-only also returns nothing.
+  // Fallback strategy: ALWAYS keep country if the user specified one — never show out-of-region results.
+  // Relax in this order: drop industry → drop keywords → drop country (last resort only).
   if (businesses.length === 0 && rawQ) {
-    if (parsedIndustry) {
+    // Step 2: keep country + keywords, drop industry
+    if (parsedCountry && parsedIndustry) {
+      const { where: w2, params: p2, nextIdx: n2 } = buildConditions(true, false, true)
+      businesses = await runQuery(w2, p2, n2)
+      if (businesses.length > 0) {
+        const loc = parsedCountry
+        fallbackNote = `Showing verified partners in ${loc}:`
+      }
+    }
+
+    // Step 3: keep country only, drop keywords too
+    if (businesses.length === 0 && parsedCountry) {
+      const { where: w2, params: p2, nextIdx: n2 } = buildConditions(true, false, false)
+      businesses = await runQuery(w2, p2, n2)
+      if (businesses.length > 0) {
+        fallbackNote = `No exact matches in ${parsedCountry}. Showing all verified partners there:`
+      }
+    }
+
+    // Step 4: no location at all — industry only
+    if (businesses.length === 0 && parsedIndustry) {
       const { where: w2, params: p2, nextIdx: n2 } = buildConditions(false, true, false)
       businesses = await runQuery(w2, p2, n2)
       if (businesses.length > 0) {
         fallbackNote = `Showing verified ${parsedIndustry} partners:`
       }
     }
+
+    // Step 5: last resort — everything
     if (businesses.length === 0) {
       const { where: w2, params: p2, nextIdx: n2 } = buildConditions(false, false, false)
       businesses = await runQuery(w2, p2, n2)
