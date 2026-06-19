@@ -33,7 +33,7 @@ export async function sendVerificationEmail(to: string, name: string, token: str
       <a href="${link}" style="display:inline-block;background:#c44b1b;color:#fff;padding:14px 28px;text-decoration:none;font-family:monospace;font-size:13px;margin:12px 0">
         Verify Email →
       </a>
-      <p style="color:#999;font-size:13px;margin-top:24px">This link expires in 48 hours. If you didn't register, ignore this email.</p>
+      <p style="color:#999;font-size:13px;margin-top:24px">This link expires in 7 days. If you didn't register, ignore this email.</p>
     </div>`
   )
 }
@@ -76,7 +76,7 @@ ${descLine}${contextLine}
 To review and accept this request, visit:
 ${link}
 
-This link expires in 48 hours. If you were not expecting this, you can ignore it.
+This link expires in 7 days. If you were not expecting this, you can ignore it.
 
 — NexusB2B Team
 `
@@ -90,7 +90,7 @@ This link expires in 48 hours. If you were not expecting this, you can ignore it
     <p style="margin:16px 0">
       <a href="${link}" style="background:#c44b1b;color:#fff;padding:10px 20px;text-decoration:none;font-size:14px;display:inline-block">Accept &amp; Open Session</a>
     </p>
-    <p style="margin:16px 0 0;font-size:12px;color:#888">This link expires in 48 hours. If you were not expecting this, you can ignore it.</p>
+    <p style="margin:16px 0 0;font-size:12px;color:#888">This link expires in 7 days. If you were not expecting this, you can ignore it.</p>
   </div>`
 
   await sendEmail(params.to, subject, html, text)
@@ -108,7 +108,7 @@ export async function sendTeamInvite(to: string, inviterName: string, businessNa
       <a href="${link}" style="display:inline-block;background:#c44b1b;color:#fff;padding:14px 28px;text-decoration:none;font-family:monospace;font-size:13px;margin:12px 0">
         Accept Invitation →
       </a>
-      <p style="color:#999;font-size:13px;margin-top:24px">This link expires in 48 hours.</p>
+      <p style="color:#999;font-size:13px;margin-top:24px">This link expires in 7 days.</p>
     </div>`
   )
 }

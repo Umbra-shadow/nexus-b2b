@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   const createdAt = new Date(row.created_at)
-  const expiresAt = new Date(createdAt.getTime() + 48 * 60 * 60 * 1000)
+  const expiresAt = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000) // 7 days
   if (new Date() > expiresAt) {
     return NextResponse.json({ error: 'Invitation has expired' }, { status: 400 })
   }

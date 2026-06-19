@@ -8,7 +8,7 @@ export function generateToken(): string {
 export async function createVerificationToken(
   userId: string,
   type: 'email_verify' | 'password_reset' | 'invite',
-  expiresInHours = 48
+  expiresInHours = 168 // 7 days — long enough for demo and onboarding flows
 ): Promise<string> {
   const token = generateToken()
   const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000)

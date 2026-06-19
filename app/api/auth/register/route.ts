@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
 
       const tokenRes = await client.query(
         `INSERT INTO verification_tokens (user_id, token, type, expires_at)
-         VALUES ($1, $2, 'email_verify', NOW() + INTERVAL '48 hours')
+         VALUES ($1, $2, 'email_verify', NOW() + INTERVAL '7 days')
          RETURNING token`,
         [userId, require('crypto').randomBytes(32).toString('hex')]
       )
