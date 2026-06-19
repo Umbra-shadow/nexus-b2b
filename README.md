@@ -159,7 +159,7 @@ npm run dev
 | `RESEND_API` | ✓ | Resend API key for transactional email |
 | `RESEND_FROM` | ✓ | Verified sender e.g. `NexusB2B <hello@nexusb2b.io>` |
 | `ENCRYPTION_KEY` | ✓ | 32-byte hex key for AES-256-GCM (banking details) |
-| `GEMINI_API_KEY` | optional | Server-side fallback Gemini key. Users can also supply their own via the key input in the top bar. |
+| `GEMINI_API_KEY` | ✓ | Gemini API key — required for AI search, Lummy introductions, and deal session replies. Users can also override with their own key via the top bar input. |
 
 > **Security:** Never commit `.env` to version control. The `.gitignore` excludes it. All secrets live only in Vercel environment variables in production.
 
