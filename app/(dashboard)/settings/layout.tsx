@@ -60,9 +60,9 @@ function TabBar() {
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'auto' }}>
-      {/* Form area */}
-      <div style={{ flex: 1, minWidth: 0, padding: '36px 40px', maxWidth: 780 }}>
+    <div style={{ display: 'flex', minHeight: '100%' }}>
+      {/* Form area — capped so the image always gets real estate */}
+      <div style={{ flex: '0 0 auto', width: '100%', maxWidth: 780, padding: '36px 40px', overflowY: 'auto' }}>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase', color: '#c44b1b', marginBottom: 10 }}>/ Settings</div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 52, lineHeight: 0.9, color: 'var(--nx-fg-strong)', marginBottom: 24 }}>SETTINGS</h1>
         <Suspense>
@@ -71,10 +71,10 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         {children}
       </div>
 
-      {/* Decorative image panel */}
+      {/* Decorative image panel — grows to fill all remaining width */}
       <div style={{
-        width: 260,
-        flexShrink: 0,
+        flex: 1,
+        minWidth: 200,
         borderLeft: '1px solid var(--nx-border)',
         position: 'sticky',
         top: 0,
