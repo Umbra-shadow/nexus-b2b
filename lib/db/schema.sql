@@ -120,3 +120,23 @@ CREATE TABLE receipts (
 CREATE INDEX idx_receipts_session ON receipts(session_id);
 CREATE INDEX idx_receipts_issuer ON receipts(issuer_business_id);
 CREATE INDEX idx_receipts_receiver ON receipts(receiver_business_id);
+
+-- Business change requests — all profile edits and business deletions go through admin review
+CREATE TYPE change_request_type   AS ENUM ('update_info', 'delete_business');
+CREATE TYPE change_request_status AS ENUM ('pending', 'approved', 'rejected', 'cancelled');
+
+CREATE TABLE business_change_requests (
+  id            UUID                  PRIMARY KEY DEFAULT gen_random_uuid(),
+  business_id   UUID                  NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
+  type          change_request_type   NOT NULL,
+  status        change_request_status NOT NULL DEFAULT 'pending',
+  requested_by  UUID                  NOT NULL REFERENCES users(id),
+  requested_at  TIMESTAMPTZ           NOT NULL DEFAULT NOW(),
+  reviewed_by   UUID                  REFERENCES users(id),
+  reviewed_at   TIMESTAMPTZ,
+  admin_note    TEXT,
+  payload       JSONB                 NOT NULL DEFAULT '{}'
+);
+
+CREATE INDEX idx_bcr_business_status ON business_change_requests (business_id, status);
+CREATE INDEX idx_bcr_status_date     ON business_change_requests (status, requested_at DESC);

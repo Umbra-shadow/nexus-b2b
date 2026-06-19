@@ -11,7 +11,8 @@ export async function DELETE(_req: NextRequest) {
       { status: 403 }
     )
   }
-  await query(`DELETE FROM users WHERE id = $1`, [session.user.id])
+  // Soft-delete: deactivate the account so all messages and session history are preserved
+  await query(`UPDATE users SET is_active = false WHERE id = $1`, [session.user.id])
   return NextResponse.json({ success: true })
 }
 

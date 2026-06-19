@@ -58,8 +58,6 @@ function TabBar() {
   )
 }
 
-const SETTINGS_IMAGE = process.env.NEXT_PUBLIC_SETTINGS_IMAGE_URL ?? ''
-
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', height: '100%', overflow: 'auto' }}>
@@ -84,23 +82,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         overflow: 'hidden',
         background: 'var(--nx-raised)',
       }}>
-        {SETTINGS_IMAGE ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={SETTINGS_IMAGE} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-        ) : (
-          <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 20 }}>
-            {/* NexusB2B logo mark */}
-            <div style={{ width: 48, height: 48, position: 'relative', flexShrink: 0 }}>
-              <div style={{ position: 'absolute', width: 16, height: 16, background: '#c44b1b', top: 0, left: 0 }} />
-              <div style={{ position: 'absolute', width: 16, height: 16, border: '2px solid #c44b1b', top: 0, right: 0 }} />
-              <div style={{ position: 'absolute', width: 16, height: 16, border: '2px solid #c44b1b', bottom: 0, left: 0 }} />
-              <div style={{ position: 'absolute', width: 16, height: 16, background: '#c44b1b', bottom: 0, right: 0 }} />
-            </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--nx-muted)', textAlign: 'center' }}>
-              NexusB2B
-            </div>
-          </div>
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/settings_pic.jpeg" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
       </div>
     </div>
   )
