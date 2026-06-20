@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { decrypt } from '@/lib/crypto/encrypt'
 import Link from 'next/link'
+import { DownloadPdfButton } from '@/components/receipts/DownloadPdfButton'
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -266,14 +267,8 @@ export default async function ReceiptPage({ params }: Props) {
             )}
           </div>
 
-          {/* Download — real PDF generated server-side */}
-          <a
-            href={`/api/receipts/${id}/pdf`}
-            download
-            style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#c44b1b', border: '1px solid rgba(196,75,27,0.4)', padding: '12px 20px', textDecoration: 'none', whiteSpace: 'nowrap' }}
-          >
-            ⬇ Download PDF
-          </a>
+          {/* Download — fetched client-side so errors show inline instead of navigating away */}
+          <DownloadPdfButton receiptId={id} />
         </div>
       </div>
     </div>

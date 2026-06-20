@@ -43,6 +43,7 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 export async function GET(_req: NextRequest, { params }: Params) {
+  try {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -278,4 +279,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
       'Content-Length': String(buffer.length),
     },
   })
+  } catch (err) {
+    console.error('[pdf/generate]', err)
+    return NextResponse.json({ error: 'PDF generation failed', detail: String(err) }, { status: 500 })
+  }
 }
