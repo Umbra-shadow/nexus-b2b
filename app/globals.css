@@ -290,3 +290,77 @@ html[data-theme] body { background: var(--nx-bg); color: var(--nx-fg); }
 @media (min-width: 1024px) {
   .nx-dash-bottom { grid-template-columns: 1.5fr 1fr; }
 }
+
+/* ── Landing page additions ────────────────────────────────── */
+
+/* Subtle dot-grid depth layer */
+.nx-dot-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(circle, var(--nx-border) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.45;
+}
+[data-theme="light"] .nx-dot-grid {
+  opacity: 0.25;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nx-dot-grid { display: none; }
+}
+
+/* Hero two-column split */
+.nx-hero-split {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 900px) {
+  .nx-hero-split { grid-template-columns: 1.25fr 0.75fr; }
+}
+
+/* Right panel border — top on mobile, left on desktop */
+.nx-hero-panel-border {
+  border-top: 1px solid var(--nx-border);
+  padding-top: 32px;
+}
+@media (min-width: 900px) {
+  .nx-hero-panel-border {
+    border-top: none;
+    border-left: 1px solid var(--nx-border);
+  }
+}
+
+/* How-it-works 3-column grid */
+.nx-steps-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .nx-steps-grid { grid-template-columns: repeat(3, 1fr); }
+}
+/* Fix step borders on mobile */
+@media (max-width: 639px) {
+  .nx-steps-grid > div {
+    border-right: none !important;
+    border-bottom: 1px solid var(--nx-border);
+  }
+  .nx-steps-grid > div:last-child {
+    border-bottom: none;
+  }
+}
+
+/* Business card hover */
+.nx-biz-card:hover {
+  background: var(--nx-raised);
+  cursor: default;
+}
+
+/* Industry ticker */
+@keyframes nx-ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [style*="nx-ticker"] { animation: none !important; }
+}
